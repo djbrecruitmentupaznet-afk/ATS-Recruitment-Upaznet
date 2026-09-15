@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- Tailwind CSS & Google Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    .nav-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: #4b5563; text-decoration: none; transition: 0.2s; }
+    .nav-btn:hover { background-color: #eff6ff; color: #2563eb; }
+    .nav-btn.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800">
+
+  <!-- OVERLAY LOADING -->
+  <div id="loadingOverlay" style="display: none;" class="fixed inset-0 bg-gray-800/40 z-[999] flex flex-col items-center justify-center backdrop-blur-sm">
+    <div class="bg-white/95 px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center border border-gray-200/50">
+      <span class="material-icons animate-spin text-blue-600 text-5xl mb-3">autorenew</span>
+      <p class="font-bold text-lg text-gray-800" id="loadingText">Memproses Data...</p>
+    </div>
+  </div>
+
+  <!-- SIDEBAR DINAMIS -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0">
+    <div class="p-6 border-b border-gray-200 flex flex-col items-start overflow-hidden">
+      <img src="https://drive.google.com/thumbnail?id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF&sz=w800" alt="Logo" class="h-10 w-auto object-contain mb-3">
+      <h1 class="text-[13px] font-bold text-blue-700 leading-tight whitespace-nowrap uppercase tracking-tight">
+        APPLICANT TRACKING SYSTEM
+      </h1>
+      <p class="text-[11px] font-semibold text-gray-600 mt-0.5 whitespace-nowrap">
+        PT Dimensi Jaringan Bersinar
+      </p>
+    </div>
+    <div class="flex-1 p-4 space-y-2">
+      <a href="index.html" class="nav-btn active"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
+      <a href="calendar.html" class="nav-btn"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
+      <a href="analytics.html" class="nav-btn"><span class="material-icons">analytics</span> Analytics</a>
+    </div>
+  </aside>
+
+  <!-- MAIN DASHBOARD -->
+  <main class="flex-1 overflow-auto p-6 relative">
+    <div class="max-w-[1500px] mx-auto bg-white rounded-xl shadow-md border border-gray-200 flex flex-col">
+      
+      <!-- Toolbar Atas -->
+      <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Dashboard Recruitment</h1>
+          <p class="text-gray-500 mt-1 text-sm">Sistem Pemantauan Tahapan Seleksi Kandidat</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition-colors">
+            <span class="material-icons text-sm">download</span> Ekspor Data
+          </button>
+          <button onclick="openModal('addCandidateModal')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition-colors">
+            <span class="material-icons text-sm">add</span> Tambah Kandidat
+          </button>
+        </div>
+      </div>
+
+      <!-- Pencarian & Tombol Filter -->
+      <div class="p-4 bg-gray-50 border-b border-gray-200 flex gap-4 items-center">
+        <div class="relative w-96 shadow-sm flex-shrink-0">
+          <span class="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
+          <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari Nama, Posisi..." class="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none bg-white" />
+        </div>
+        <button onclick="toggleFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 border shadow-sm bg-white border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+          <span class="material-icons text-sm">filter_alt</span> Filter
+        </button>
+      </div>
+
+      <!-- PANEL FILTER LENGKAP -->
+      <div id="filterContainer" class="p-5 bg-white border-b border-gray-200 shadow-inner hidden">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Tahapan (Belum Diproses)</h3>
+            <div class="space-y-2 mt-2" id="filterTahapan"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Platform</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterPlatform"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Posisi</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterPosisi"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Entitas</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterEntitas"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel -->
+      <div class="overflow-x-auto flex-1 pb-16">
+        <table class="w-full text-left border-collapse min-w-[1300px]">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700 font-semibold border-b border-gray-200">
+              <th class="py-3 px-4 w-32 text-xs">Waktu Input</th>
+              <th class="py-3 px-4">Nama</th>
+              <th class="py-3 px-4">Nomor WA</th>
+              <th class="py-3 px-4">CV</th>
+              <th class="py-3 px-4">Platform</th>
+              <th class="py-3 px-4">Posisi</th>
+              <th class="py-3 px-4">Entitas</th>
+              <th class="py-3 px-4 w-64 text-center">Tahapan Interview</th>
+              <th class="py-3 px-4 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="modalContainer"></div>
+  <div id="modalTemplateContainer"></div>
+
+  <!-- ===================================== -->
+  <!-- SCRIPT FIREBASE HYBRID & LOGIKA UTAMA -->
+  <!-- ===================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI (Tanpa Storage)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
+      authDomain: "recruitmentupaznetats.firebaseapp.com",
+      projectId: "recruitmentupaznetats",
+      storageBucket: "recruitmentupaznetats.firebasestorage.app",
+      messagingSenderId: "907827986807",
+      appId: "1:907827986807:web:06a60cb242d1b2bac16172"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.updateDoc = updateDoc;
+
+    window.initApp();
+  </script>
+
+  <script>
+    let applicants = [];
+    let selectedApplicantData = null;
+    let tempFormData = {};
+    let templatesWA = []; 
+
+    // 2. MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+    const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
+
+    window.initApp = async function() {
+      try {
+        try {
+          const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
+          templatesWA = [];
+          templatesSnapshot.forEach(doc => templatesWA.push(doc.data()));
+        } catch(e) {}
+
+        const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        applicants = [];
+        applicantsSnapshot.forEach(doc => {
+          applicants.push({ id: doc.id, ...doc.data() });
+        });
+
+        applicants.sort((a, b) => (a.id > b.id) ? 1 : -1);
+
+        renderFilterOptions(); 
+        renderTable();
+      } catch (err) {
+        console.error("Gagal memuat data:", err);
+      }
+    };
+
+    function generateSmartID() {
+      const date = new Date();
+      const yy = date.getFullYear().toString().slice(-2);
+      const mm = ("0" + (date.getMonth() + 1)).slice(-2);
+      const prefix = "REC-" + yy + mm + "-";
+      
+      let maxNum = 0;
+      applicants.forEach(app => {
+        if (app.id && app.id.startsWith(prefix)) {
+          const numStr = app.id.replace(prefix, '');
+          const num = parseInt(numStr, 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      });
+      return prefix + (maxNum + 1).toString().padStart(3, '0');
+    }
+
+    // FUNGSI UPLOAD FILE KE GOOGLE DRIVE (Via Web App GAS)
+    async function uploadFileToDriveGAS(base64Data, fileName) {
+      try {
+        const response = await fetch(GAS_UPLOAD_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ file: base64Data, name: fileName })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+          return result.url;
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        alert("Gagal mengupload file ke Drive: " + err.message);
+        return null;
+      }
+    }
+
+    window.exportToCSV = function() {
+      if (!applicants || applicants.length === 0) return alert("Tidak ada data untuk diekspor!");
+      let allKeys = new Set();
+      applicants.forEach(app => Object.keys(app).forEach(k => allKeys.add(k)));
+      const headersArray = Array.from(allKeys);
+      
+      const csvRows = [];
+      csvRows.push(headersArray.join(",")); 
+      
+      applicants.forEach(app => {
+        const row = headersArray.map(header => {
+          let val = app[header] === null || app[header] === undefined ? "" : String(app[header]);
+          return `"${val.replace(/"/g, '""')}"`;
+        });
+        csvRows.push(row.join(","));
+      });
+      
+      const csvContent = csvRows.join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Data_Rekrutmen_Kandidat.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    function toggleFilters() { document.getElementById('filterContainer').classList.toggle('hidden'); }
+
+    function renderFilterOptions() {
+      const tahapan = ['HR', 'User', 'Direktur', 'Offering', 'Onboarding'];
+      document.getElementById('filterTahapan').innerHTML = tahapan.map(t => `
+        <label class="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 font-medium">
+          <input type="checkbox" value="${t}" class="filter-tahapan w-4 h-4 rounded text-blue-600" onchange="renderTable()" /> Tahap ${t}
+        </label>
+      `).join('');
+
+      const platforms = [...new Set(applicants.map(a => a.PLATFORM).filter(Boolean))].sort();
+      const posisis = [...new Set(applicants.map(a => a.POSISI).filter(Boolean))].sort();
+      const entitas = [...new Set(applicants.map(a => a.ENTITAS).filter(Boolean))].sort();
+
+      const createCheckboxes = (items, className) => items.map(item => `
+        <label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
+          <input type="checkbox" value="${item}" class="${className} w-4 h-4 rounded" onchange="renderTable()" /> ${item}
+        </label>
+      `).join('');
+
+      document.getElementById('filterPlatform').innerHTML = createCheckboxes(platforms, 'filter-platform');
+      document.getElementById('filterPosisi').innerHTML = createCheckboxes(posisis, 'filter-posisi');
+      document.getElementById('filterEntitas').innerHTML = createCheckboxes(entitas, 'filter-entitas');
+    }
+
+    function getTriggerVal(app, tahap) {
+      if (tahap === 'Offering') return app.KESEDIAAN_OFFERING_LETTER;
+      if (tahap === 'Onboarding') return app.KEHADIRAN_ONBOARDING;
+      return app[`STATUS_INTERVIEW_${tahap.toUpperCase()}`];
+    }
+    
+    function isKuning(val) { return !val || val.trim() === ''; }
+    
+    function getBtnClass(val) {
+      if (isKuning(val)) return "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"; 
+      if (['Tidak Lolos', 'Ditolak', 'Tidak Hadir', 'Tidak Bersedia', 'Tidak Merespon'].includes(val)) return "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"; 
+      return "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"; 
+    }
+
+    window.renderTable = function() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      const checkedTahapan = Array.from(document.querySelectorAll('.filter-tahapan:checked')).map(cb => cb.value);
+      const checkedPlatform = Array.from(document.querySelectorAll('.filter-platform:checked')).map(cb => cb.value);
+      const checkedPosisi = Array.from(document.querySelectorAll('.filter-posisi:checked')).map(cb => cb.value);
+      const checkedEntitas = Array.from(document.querySelectorAll('.filter-entitas:checked')).map(cb => cb.value);
+
+      const filtered = applicants.filter(app => {
+        const matchSearch = !searchTerm || 
+               (String(app.NAMA || '').toLowerCase().includes(searchTerm) || 
+                String(app.NOMOR_WA || '').includes(searchTerm) || 
+                String(app.POSISI || '').toLowerCase().includes(searchTerm));
+                
+        const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.some(t => isKuning(getTriggerVal(app, t)));
+        const matchPlatform = checkedPlatform.length === 0 || checkedPlatform.includes(app.PLATFORM);
+        const matchPosisi = checkedPosisi.length === 0 || checkedPosisi.includes(app.POSISI);
+        const matchEntitas = checkedEntitas.length === 0 || checkedEntitas.includes(app.ENTITAS);
+
+        return matchSearch && matchTahapan && matchPlatform && matchPosisi && matchEntitas;
+      });
+
+      const tbody = document.getElementById('tableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-12 text-center text-gray-500 font-medium"><div class="flex flex-col items-center gap-2"><span class="material-icons text-4xl text-gray-300">search_off</span> Tidak ada data yang cocok.</div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.slice().reverse().map(app => `
+        <tr class="hover:bg-blue-50/40 transition-colors">
+          <td class="py-3 px-4 text-gray-500 text-[11px] leading-tight">${app.WAKTU_INPUT || ''}</td>
+          <td class="py-3 px-4 font-bold text-gray-800 text-sm whitespace-nowrap">${app.NAMA}</td>
+          <td class="py-3 px-4 text-blue-600 text-sm font-medium">
+            ${app.NOMOR_WA ? `<a href="https://wa.me/${app.NOMOR_WA}" target="_blank" class="hover:underline flex items-center gap-1"><span class="material-icons text-[14px]">chat</span> ${app.NOMOR_WA}</a>` : ''}
+          </td>
+          <td class="py-3 px-4">
+            ${app.CV ? `<a href="${app.CV}" target="_blank" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1 text-xs bg-indigo-50 px-2 py-1 rounded inline-flex border border-indigo-200 whitespace-nowrap font-bold"><span class="material-icons text-[12px]">open_in_new</span> Lihat CV</a>` : `<span class="text-gray-400 text-xs italic">Belum ada</span>`}
+          </td>
+          <td class="py-3 px-4 text-sm text-gray-700">${app.PLATFORM || ''}</td>
+          <td class="py-3 px-4 font-bold text-indigo-700 text-sm whitespace-nowrap">${app.POSISI || ''}</td>
+          <td class="py-3 px-4 font-bold text-emerald-700 text-sm">${app.ENTITAS || ''}</td>
+          
+          <td class="py-3 px-4">
+            <div class="grid grid-cols-2 gap-2 w-full">
+              ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
+                const val = getTriggerVal(app, tahap);
+                const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
+                return `
+                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan} ${getBtnClass(val)}">
+                    <span class="font-bold tracking-wide">${tahap}</span>
+                    <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex justify-center gap-2">
+               <button onclick="openModal('EditCandidate', '${app.id}')" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg shadow-sm transition-colors" title="Edit Data Kandidat">
+                 <span class="material-icons text-[16px]">edit</span>
+               </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    };
+
+    window.toggleLainnya = function(selectId, inputId) {
+      const selectObj = document.getElementById(selectId);
+      const inputObj = document.getElementById(inputId);
+      if (selectObj.value === 'Lainnya') {
+        inputObj.classList.remove('hidden');
+        inputObj.focus();
+      } else {
+        inputObj.classList.add('hidden');
+        inputObj.value = ''; 
+      }
+    };
+
+    window.openModal = function(type, appId = null) {
+      tempFormData = {};
+      let title = '', bodyHtml = '', saveFn = '', subHeader = '';
+      
+      const platformOptions = ["Glints", "KitaLulus", "Jobstreet", "LinkedIn", "Facebook", "WA - Teman", "WA - Poster/Warung", "Instansi / Sekolah"];
+      const posisiOptions = ["Staff Sales Marketing", "SPV Sales Marketing", "Manajer Sales Marketing", "Staff Teknisi", "SPV Teknisi", "Helpdesk", "SPV Helpdesk", "Staff ASL", "SPV ASL", "CS", "Developer", "Admin NOC", "SPV NOC", "SPV Finance", "Billing", "Staff Toko", "Staff HR", "SPV HR"];
+      const entitasOptions = ["UHO", "UNR", "UNB", "Fizna", "MC"];
+
+      if (type === 'addCandidateModal' || type === 'EditCandidate') {
+        title = type === 'addCandidateModal' ? 'Tambah Kandidat Baru' : 'Edit Data Kandidat';
+        saveFn = `simpanKandidat('${type}')`;
+        const a = type === 'EditCandidate' ? applicants.find(app => app.id === appId) : {};
+        selectedApplicantData = a;
+
+        const platIsLainnya = a.PLATFORM && !platformOptions.includes(a.PLATFORM);
+        const platSelectVal = platIsLainnya ? 'Lainnya' : (a.PLATFORM || '');
+        
+        const posIsLainnya = a.POSISI && !posisiOptions.includes(a.POSISI);
+        const posSelectVal = posIsLainnya ? 'Lainnya' : (a.POSISI || '');
+
+        const entIsLainnya = a.ENTITAS && !entitasOptions.includes(a.ENTITAS);
+        const entSelectVal = entIsLainnya ? 'Lainnya' : (a.ENTITAS || '');
+
+        bodyHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Nama Lengkap</label>
+              <input type="text" id="fm_nama" class="w-full p-2.5 border border-gray-300 rounded-lg uppercase font-medium bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500" value="${a.NAMA||''}" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Nomor WA</label>
+              <input type="number" id="fm_wa" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" placeholder="628..." value="${a.NOMOR_WA||''}" />
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload CV (PDF)</label>
+              <input type="file" onchange="handleFile(this, 'CV')" class="w-full p-1.5 border border-gray-300 rounded-lg outline-none bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf" />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Platform Info Loker</label>
+              <select id="fm_plat" onchange="toggleLainnya('fm_plat', 'fm_plat_lainnya')" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Pilih Platform --</option>
+                ${platformOptions.map(p => `<option value="${p}" ${platSelectVal === p ? 'selected':''}>${p}</option>`).join('')}
+                <option value="Lainnya" ${platSelectVal === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+              </select>
+              <input type="text" id="fm_plat_lainnya" class="${platIsLainnya ? 'block' : 'hidden'} w-full mt-2 p-2.5 border border-blue-300 bg-blue-50 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Sebutkan platform..." value="${platIsLainnya ? a.PLATFORM : ''}" />
+            </div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Posisi yang Dilamar</label>
+              <select id="fm_pos" onchange="toggleLainnya('fm_pos', 'fm_pos_lainnya')" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Pilih Posisi --</option>
+                ${posisiOptions.map(p => `<option value="${p}" ${posSelectVal === p ? 'selected':''}>${p}</option>`).join('')}
+                <option value="Lainnya" ${posSelectVal === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+              </select>
+              <input type="text" id="fm_pos_lainnya" class="${posIsLainnya ? 'block' : 'hidden'} w-full mt-2 p-2.5 border border-blue-300 bg-blue-50 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Sebutkan posisi..." value="${posIsLainnya ? a.POSISI : ''}" />
+            </div>
+            
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Entitas Perusahaan</label>
+              <select id="fm_ent" onchange="toggleLainnya('fm_ent', 'fm_ent_lainnya')" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Pilih Entitas --</option>
+                ${entitasOptions.map(p => `<option value="${p}" ${entSelectVal === p ? 'selected':''}>${p}</option>`).join('')}
+                <option value="Lainnya" ${entSelectVal === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+              </select>
+              <input type="text" id="fm_ent_lainnya" class="${entIsLainnya ? 'block' : 'hidden'} w-full mt-2 p-2.5 border border-blue-300 bg-blue-50 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Sebutkan entitas..." value="${entIsLainnya ? a.ENTITAS : ''}" />
+            </div>
+          </div>
+        `;
+      } 
+      else {
+        title = `Update Tahapan: ${type}`;
+        saveFn = `simpanTahap('${type}')`;
+        selectedApplicantData = applicants.find(a => a.id === appId);
+        const a = selectedApplicantData;
+        
+        subHeader = `
+          <div class="flex flex-wrap items-center gap-2 text-xs mt-3 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm w-full">
+            <span class="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-100">${a.NAMA}</span>
+            <span class="text-gray-300">|</span>
+            <span class="font-medium flex items-center gap-1 text-gray-600"><span class="material-icons text-[12px]">work</span> ${a.POSISI}</span>
+            <span class="text-gray-300">|</span>
+            <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">${a.ENTITAS}</span>
+            <span class="text-gray-300">|</span>
+            <span class="font-mono text-gray-500">${a.id}</span>
+            <div class="ml-auto flex items-center">
+               <button onclick="${a.NOMOR_WA ? `bukaModalTemplate('${a.id}')` : `alert('Nomor WA kandidat tidak tersedia')`}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors" title="Kirim Pesan WhatsApp">
+                 <span class="material-icons text-[14px]">whatsapp</span> Hubungi WA Kandidat
+               </button>
+            </div>
+          </div>
+        `;
+        
+        if (['HR', 'User', 'Direktur'].includes(type)) {
+          const t = type.toUpperCase();
+          bodyHtml = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jadwal Interview ${type}</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JADWAL_INTERVIEW_'+t]||''}"></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jam Interview</label><input type="time" id="fm_jam" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JAM_INTERVIEW_'+t]||''}"></div>
+              
+              <div class="md:col-span-2 flex justify-end pb-2 border-b border-gray-100">
+                <button onclick="simpanTanpaTutup('${type}')" class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm flex items-center gap-1 transition-colors">
+                  <span class="material-icons text-[14px]">save</span> Simpan Tanggal & Jam
+                </button>
+              </div>
+
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label><select id="fm_metode" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option><option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option></select></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kesediaan Hadir</label><select id="fm_sedia" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Bersedia'?'selected':''}>Bersedia</option><option value="Tidak Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Bersedia'?'selected':''}>Tidak Bersedia</option><option value="Tidak Merespon" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Merespon'?'selected':''}>Tidak Merespon</option></select></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kehadiran Aktual</label><select id="fm_hadir" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Hadir'?'selected':''}>Hadir</option><option value="Tidak Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Tidak Hadir'?'selected':''}>Tidak Hadir</option></select></div>
+              
+              ${type === 'HR' ? `
+                <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Psikotest HR</label><select id="fm_psikotest" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Dominan" ${a.PSIKOTEST_HR==='Dominan'?'selected':''}>Dominan</option><option value="Influence" ${a.PSIKOTEST_HR==='Influence'?'selected':''}>Influence</option><option value="Steadiness" ${a.PSIKOTEST_HR==='Steadiness'?'selected':''}>Steadiness</option><option value="Compliance" ${a.PSIKOTEST_HR==='Compliance'?'selected':''}>Compliance</option></select></div>
+                <div class="space-y-1.5 md:col-span-2"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">URL Form Pelamar (G-Drive)</label><input type="url" id="fm_url" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" placeholder="http://..." value="${a.FORM_PELAMAR_HR||''}"></div>
+              ` : ''}
+
+              <div class="space-y-1.5 md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+                <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Status Interview ${type} (Trigger Warna)</label>
+                <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                  <option value="">-- Tentukan Status --</option>
+                  <option value="Lolos" ${a['STATUS_INTERVIEW_'+t] === 'Lolos' ? 'selected':''}>Lolos</option>
+                  <option value="Tidak Lolos" ${a['STATUS_INTERVIEW_'+t] === 'Tidak Lolos' ? 'selected':''}>Tidak Lolos</option>
+                </select>
+              </div>
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Keterangan / Catatan</label>
+                <textarea id="fm_ket" rows="2" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none">${a['KETERANGAN_INTERVIEW_'+t]||''}</textarea>
+              </div>
+            </div>
+          `;
+        } else if (type === 'Offering') {
+          bodyHtml = `
+            <div class="grid grid-cols-1 gap-5 mt-2">
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Offering</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_OFFERING_LETTER||''}"></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload File Offering</label><input type="file" onchange="handleFile(this, 'OFFERING')" class="w-full p-1.5 border border-gray-300 rounded-lg bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx"></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Deadline Offering Letter</label><input type="date" id="fm_deadline_offering" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.DEADLINE_OFFERING_LETTER||''}"></div>
+              <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+                <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Respon Kandidat (Trigger Warna)</label>
+                <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                  <option value="">-- Pilih --</option>
+                  <option value="Diterima" ${a.KESEDIAAN_OFFERING_LETTER === 'Diterima' ? 'selected':''}>Diterima</option>
+                  <option value="Ditolak" ${a.KESEDIAAN_OFFERING_LETTER === 'Ditolak' ? 'selected':''}>Ditolak</option>
+                </select>
+              </div>
+            </div>
+          `;
+        } else if (type === 'Onboarding') {
+          bodyHtml = `
+            <div class="grid grid-cols-1 gap-5 mt-2">
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Onboarding</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_ONBOARDING||''}"></div>
+              <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+                <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Kehadiran (Trigger Warna)</label>
+                <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                  <option value="">-- Pilih --</option>
+                  <option value="Hadir" ${a.KEHADIRAN_ONBOARDING === 'Hadir' ? 'selected':''}>Hadir</option>
+                  <option value="Tidak Hadir" ${a.KEHADIRAN_ONBOARDING === 'Tidak Hadir' ? 'selected':''}>Tidak Hadir</option>
+                </select>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-gray-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-200">
+            <div class="px-6 py-4 bg-gray-50 border-b flex flex-col items-start w-full">
+              <div class="flex justify-between items-center w-full">
+                 <h2 class="text-xl font-bold text-gray-800">${title}</h2>
+                 <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-200"><span class="material-icons text-[20px]">close</span></button>
+              </div>
+              ${subHeader}
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white">${bodyHtml}</div>
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-xl">
+              <button onclick="closeModal()" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm">Batal</button>
+              <button onclick="${saveFn}" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2">
+                <span class="material-icons text-[16px]">check_circle</span> Simpan Data
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    window.closeModal = function() { document.getElementById('modalContainer').innerHTML = ''; };
+
+    window.handleFile = function(el, targetField) {
+      const f = el.files[0];
+      if (f) {
+        const r = new FileReader();
+        r.onload = e => { tempFormData[`${targetField}_BASE64`] = e.target.result; tempFormData[`${targetField}_NAME`] = f.name; };
+        r.readAsDataURL(f);
+      }
+    };
+
+    window.simpanKandidat = async function(type) {
+      document.getElementById('loadingText').innerText = "Menyimpan ke Database...";
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+      
+      try {
+        let platVal = document.getElementById('fm_plat').value;
+        if (platVal === 'Lainnya') platVal = document.getElementById('fm_plat_lainnya').value;
+        
+        let posVal = document.getElementById('fm_pos').value;
+        if (posVal === 'Lainnya') posVal = document.getElementById('fm_pos_lainnya').value;
+
+        let entVal = document.getElementById('fm_ent').value;
+        if (entVal === 'Lainnya') entVal = document.getElementById('fm_ent_lainnya').value;
+
+        const payload = {
+          NAMA: document.getElementById('fm_nama').value.toUpperCase(), 
+          NOMOR_WA: document.getElementById('fm_wa').value,
+          PLATFORM: platVal, 
+          POSISI: posVal,
+          ENTITAS: entVal
+        };
+
+        let activeId = type === 'addCandidateModal' ? generateSmartID() : selectedApplicantData.id;
+
+        if(tempFormData.CV_BASE64) {
+          const ekstensi = tempFormData.CV_NAME.split('.').pop();
+          const namaBaru = `${activeId} - ${payload.NAMA} - ${payload.POSISI} - ${payload.ENTITAS}.${ekstensi}`;
+          // Memanggil fungsi upload via Drive GAS
+          const driveUrl = await uploadFileToDriveGAS(tempFormData.CV_BASE64, namaBaru);
+          if (driveUrl) payload.CV = driveUrl;
+        }
+        
+        closeModal(); 
+        
+        if (type === 'addCandidateModal') {
+          const d = new Date();
+          const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+          const hours = ('0' + d.getHours()).slice(-2);
+          const mins = ('0' + d.getMinutes()).slice(-2);
+          payload.WAKTU_INPUT = `${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear()} - ${hours}.${mins}`;
+          payload.id = activeId;
+
+          await window.setDoc(window.doc(window.db, "applicants", activeId), payload);
+        } else {
+          await window.updateDoc(window.doc(window.db, "applicants", activeId), payload);
+        }
+
+        await window.initApp(); 
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none'; 
+      }
+    };
+
+    window.simpanTahap = async function(type) {
+      document.getElementById('loadingText').innerText = "Memperbarui Tahapan...";
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+      
+      try {
+        const payload = {}; const t = type.toUpperCase();
+
+        if (['HR', 'User', 'Direktur'].includes(type)) {
+          payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
+          payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
+          payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
+          payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
+          payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
+          payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
+          if (type === 'HR') {
+            payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
+            payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
+          }
+        } else if (type === 'Offering') {
+          payload.TANGGAL_OFFERING_LETTER = document.getElementById('fm_jadwal').value;
+          payload.DEADLINE_OFFERING_LETTER = document.getElementById('fm_deadline_offering').value;
+          payload.KESEDIAAN_OFFERING_LETTER = document.getElementById('fm_status').value;
+          if(tempFormData.OFFERING_BASE64) {
+            const ekstensi = tempFormData.OFFERING_NAME.split('.').pop();
+            const namaBaru = `Offering - ${selectedApplicantData.id} - ${selectedApplicantData.NAMA}.${ekstensi}`;
+            // Memanggil fungsi upload via Drive GAS
+            const driveUrl = await uploadFileToDriveGAS(tempFormData.OFFERING_BASE64, namaBaru);
+            if (driveUrl) payload.OFFERING_FILE = driveUrl;
+          }
+        } else if (type === 'Onboarding') {
+          payload.TANGGAL_ONBOARDING = document.getElementById('fm_jadwal').value;
+          payload.KEHADIRAN_ONBOARDING = document.getElementById('fm_status').value;
+        }
+
+        closeModal(); 
+        await window.updateDoc(window.doc(window.db, "applicants", selectedApplicantData.id), payload);
+        await window.initApp();
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    };
+
+    window.simpanTanpaTutup = async function(type) {
+      document.getElementById('loadingText').innerText = "Menyimpan Data Sementara...";
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+      
+      try {
+        const payload = {}; const t = type.toUpperCase();
+
+        if (['HR', 'User', 'Direktur'].includes(type)) {
+          payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
+          payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
+          payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
+          payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
+          payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
+          payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
+          if (type === 'HR') {
+            payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
+            payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
+          }
+        }
+
+        await window.updateDoc(window.doc(window.db, "applicants", selectedApplicantData.id), payload);
+        await window.initApp();
+        alert("Tanggal berhasil disimpan! Anda sekarang bisa klik tombol 'Undang WA'.");
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none'; 
+      }
+    };
+
+    window.bukaModalTemplate = function(appId) {
+      const app = applicants.find(a => a.id === appId);
+      let optionsHTML = '<option value="">-- Pilih Template Pesan --</option>';
+      templatesWA.forEach((t, index) => {
+        optionsHTML += `<option value="${index}">${t.name.toUpperCase()}</option>`;
+      });
+
+      const html = `
+        <div class="fixed inset-0 bg-gray-900/60 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-200">
+            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span class="material-icons text-green-500">whatsapp</span> Kirim Pesan ke ${app.NAMA}</h2>
+              <button onclick="tutupModalTemplate()" class="text-gray-400 hover:text-red-500 transition-colors"><span class="material-icons">close</span></button>
+            </div>
+            <div class="p-5 space-y-4">
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Pilih Template Pesan</label>
+                <select id="sel_template" onchange="previewTemplate('${app.id}')" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-green-500 font-medium">
+                  ${optionsHTML}
+                </select>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Preview Pesan WA</label>
+                <textarea id="preview_wa" rows="8" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none text-sm bg-gray-50 text-gray-800 font-medium leading-relaxed" placeholder="Pilih template untuk melihat isi pesan..."></textarea>
+                <p class="text-[10px] text-gray-500 mt-1">*Anda masih bisa menambahkan atau mengedit teks di atas sebelum dikirim</p>
+              </div>
+            </div>
+            <div class="px-5 py-4 border-t flex justify-end gap-3 bg-gray-50">
+              <button onclick="tutupModalTemplate()" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">Batal</button>
+              <button onclick="kirimWA('${app.NOMOR_WA}')" class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2 shadow-sm">
+                <span class="material-icons text-[16px]">send</span> Kirim ke WA
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('modalTemplateContainer').innerHTML = html;
+    };
+
+    window.previewTemplate = function(appId) {
+      const idx = document.getElementById('sel_template').value;
+      const ta = document.getElementById('preview_wa');
+      
+      if (idx === "") {
+        ta.value = "";
+        return;
+      }
+      
+      let text = templatesWA[idx].text;
+      const app = applicants.find(a => a.id === appId);
+      
+      if (app) {
+        let tglFormat = '-';
+        if (app.JADWAL_INTERVIEW_HR && app.JADWAL_INTERVIEW_HR.includes('-')) {
+          const parts = app.JADWAL_INTERVIEW_HR.split('-');
+          const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+          const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+          const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+          
+          const namaHari = dayNames[dateObj.getDay()];
+          tglFormat = `${namaHari}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
+        } else if (app.JADWAL_INTERVIEW_HR) {
+          tglFormat = app.JADWAL_INTERVIEW_HR;
+        }
+
+        let jamFormat = app.JAM_INTERVIEW_HR || '-';
+
+        text = text.replace(/\[NAMA\]/g, app.NAMA || '-');
+        text = text.replace(/\[POSISI\]/g, app.POSISI || '-');
+        text = text.replace(/\[ENTITAS\]/g, app.ENTITAS || '-');
+        text = text.replace(/\[PLATFORM\]/g, app.PLATFORM || '-');
+        text = text.replace(/\[JADWAL_INTERVIEW_HR\]/g, tglFormat);
+        text = text.replace(/\[JAM_INTERVIEW_HR\]/g, jamFormat);
+      }
+      
+      ta.value = text;
+    };
+
+    window.tutupModalTemplate = function() {
+      document.getElementById('modalTemplateContainer').innerHTML = '';
+    };
+
+    window.kirimWA = function(noWa) {
+      const text = document.getElementById('preview_wa').value;
+      if(!text.trim()) return alert("Pilih template terlebih dahulu!");
+
+      let formatWa = noWa.toString().replace(/[^0-9]/g, '');
+      if(formatWa.startsWith('0')) formatWa = '62' + formatWa.substring(1);
+
+      const url = `https://wa.me/${formatWa}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+      tutupModalTemplate();
+    };
+  </script>
+</body>
+</html>
