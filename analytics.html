@@ -17,14 +17,17 @@
 </head>
 <body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800">
 
-  <!-- OVERLAY LOADING (Disembunyikan secara default) -->
+  <!-- OVERLAY PENJAGA PINTU (AUTH GUARD) -->
+  <div id="authGuardOverlay" class="fixed inset-0 bg-gray-50 z-[1000] flex flex-col items-center justify-center">
+    <span class="material-icons animate-spin text-blue-600 text-5xl mb-3">autorenew</span>
+    <p class="font-bold text-lg text-gray-800">Memeriksa Akses Keamanan...</p>
+  </div>
+
+  <!-- OVERLAY LOADING BIASA -->
   <div id="loadingOverlay" style="display: none;" class="fixed inset-0 bg-gray-900/50 z-[999] flex flex-col items-center justify-center backdrop-blur-sm">
     <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center border border-gray-200">
-      <span class="material-icons animate-spin text-blue-600 text-5xl mb-3" id="loadingIcon">autorenew</span>
+      <span class="material-icons animate-spin text-blue-600 text-5xl mb-3">autorenew</span>
       <p class="font-bold text-lg text-gray-800" id="loadingText">Menarik Data Analytics...</p>
-      <button onclick="tutupLoadingPaksa()" class="mt-4 px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-lg border border-gray-300">
-        Lewati & Tutup Loading
-      </button>
     </div>
   </div>
 
@@ -32,21 +35,23 @@
   <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0">
     <div class="p-6 border-b border-gray-200 flex flex-col items-start overflow-hidden">
       <img src="https://drive.google.com/thumbnail?id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF&sz=w800" alt="Logo" class="h-10 w-auto object-contain mb-3">
-      
-      <!-- Ukuran teks dikecilkan ke text-[13px] agar pas 1 baris -->
       <h1 class="text-[13px] font-bold text-blue-700 leading-tight whitespace-nowrap uppercase tracking-tight">
         APPLICANT TRACKING SYSTEM
       </h1>
-      <!-- Subjudul disesuaikan sedikit menjadi text-[11px] -->
       <p class="text-[11px] font-semibold text-gray-600 mt-0.5 whitespace-nowrap">
         PT Dimensi Jaringan Bersinar
       </p>
     </div>
     <div class="flex-1 p-4 space-y-2">
-      <!-- Navigasi disesuaikan dengan file statis .html -->
       <a href="index.html" class="nav-btn"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
       <a href="calendar.html" class="nav-btn"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
       <a href="analytics.html" class="nav-btn active"><span class="material-icons">analytics</span> Recruitment Analytics</a>
+    </div>
+    <!-- TOMBOL LOGOUT -->
+    <div class="p-4 border-t border-gray-200">
+      <button onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold transition-colors border border-red-100 shadow-sm">
+        <span class="material-icons text-[18px]">logout</span> Keluar (Logout)
+      </button>
     </div>
   </aside>
 
@@ -65,7 +70,7 @@
         </button>
       </div>
 
-      <!-- PANEL FILTER CHECKLIST (Hidden Default) -->
+      <!-- PANEL FILTER CHECKLIST -->
       <div id="filterContainer" class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hidden">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="space-y-2">
@@ -138,15 +143,13 @@
   <!-- CONTAINER MODAL UNTUK KLIK FUNNEL -->
   <div id="modalContainer"></div>
 
-  <!-- ===================================== -->
-  <!-- SCRIPT FIREBASE & LOGIKA UTAMA        -->
-  <!-- ===================================== -->
+  <!-- SCRIPT FIREBASE HYBRID + AUTH -->
   <script type="module">
-    // IMPORT FIREBASE SDK v10 (Ganti google.script.run)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // PENTING: GANTI KONFIGURASI INI DENGAN MILIK ANDA DARI FIREBASE CONSOLE!
+    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
     const firebaseConfig = {
       apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
       authDomain: "recruitmentupaznetats.firebaseapp.com",
@@ -161,21 +164,31 @@
     window.collection = collection;
     window.getDocs = getDocs;
 
-    window.initApp();
+    const auth = getAuth(app);
+    window.auth = auth;
+    window.signOut = signOut;
+
+    // PENJAGA PINTU (AUTH CHECKER)
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('authGuardOverlay').style.display = 'none';
+        window.initApp();
+      } else {
+        // Jika belum login, tendang balik ke index.html
+        window.location.href = 'index.html';
+      }
+    });
   </script>
 
-  <!-- ===================================== -->
-  <!-- JAVASCRIPT LOGIC Analytics            -->
-  <!-- ===================================== -->
+  <!-- JAVASCRIPT LOGIC Analytics -->
   <script>
     var applicants = [];
 
-    window.tutupLoadingPaksa = function() {
-      document.getElementById('loadingOverlay').style.display = 'none';
-      if (applicants.length > 0) {
-        renderSemua();
+    window.logoutApp = async function() {
+      if (confirm("Yakin ingin keluar dari sistem?")) {
+        await window.signOut(window.auth);
       }
-    };
+    }
 
     window.initApp = async function() {
       try {
@@ -185,22 +198,15 @@
           applicants.push({ id: doc.id, ...doc.data() });
         });
 
-        document.getElementById('loadingOverlay').style.display = 'none';
         renderFilterOptions();
         renderSemua();
       } catch (err) {
-        document.getElementById('loadingText').innerText = "Gagal memuat: " + err.message;
-        document.getElementById('loadingIcon').innerText = "error";
+        console.error("Gagal memuat data analytics: ", err);
       }
     };
 
     window.toggleFilters = function() {
-      var fc = document.getElementById('filterContainer');
-      if (fc.classList.contains('hidden')) {
-        fc.classList.remove('hidden');
-      } else {
-        fc.classList.add('hidden');
-      }
+      document.getElementById('filterContainer').classList.toggle('hidden');
     };
 
     window.renderFilterOptions = function() {
@@ -230,7 +236,6 @@
     }
 
     window.renderSemua = function() {
-      // 1. Ambil nilai filter yang dicentang
       var checkedPlatform = [];
       var pCb = document.querySelectorAll('.filter-platform:checked');
       for(var i=0; i<pCb.length; i++) checkedPlatform.push(pCb[i].value);
@@ -243,7 +248,6 @@
       var eCb = document.querySelectorAll('.filter-entitas:checked');
       for(var k=0; k<eCb.length; k++) checkedEntitas.push(eCb[k].value);
 
-      // 2. Saring data sesuai filter
       var filtered = applicants.filter(function(app) {
         var matchPlatform = checkedPlatform.length === 0 || checkedPlatform.indexOf(app.PLATFORM) > -1;
         var matchPosisi = checkedPosisi.length === 0 || checkedPosisi.indexOf(app.POSISI) > -1;
@@ -251,7 +255,6 @@
         return matchPlatform && matchPosisi && matchEntitas;
       });
 
-      // 3. Hitung KPI
       var total = filtered.length;
       var lolosHR = 0, lolosUser = 0, lolosDir = 0, terimaOff = 0, onboard = 0;
 
@@ -269,7 +272,6 @@
       document.getElementById('kpiOnboard').innerText = onboard;
       document.getElementById('kpiRate').innerText = total > 0 ? (onboard / total * 100).toFixed(1) + '%' : '0.0%';
 
-      // 4. Render Funnel
       function getPr(v) { return total > 0 ? Math.round((v / total) * 100) : 0; }
       
       var fData = [
@@ -296,7 +298,6 @@
       }
       document.getElementById('funnelContainer').innerHTML = funnelHtml;
 
-      // 5. Render Top List berdasarkan Data yang sudah difilter
       window.renderTop('PLATFORM', 'platformContainer', filtered);
       window.renderTop('POSISI', 'posisiContainer', filtered);
     };
