@@ -156,18 +156,22 @@
           const tr = document.createElement('tr');
           tr.className = "hover:bg-gray-50 transition-colors";
           
-          // Truncate message for preview
-          const preview = data.message.length > 80 ? data.message.substring(0, 80) + '...' : data.message;
+          // Pengecekan aman: Jika data.name atau data.message kosong, beri nilai default string kosong ('')
+          const namaTemplate = data.name || 'Tanpa Nama';
+          const isiPesan = data.message || '';
+          
+          // Truncate message for preview dengan aman
+          const preview = isiPesan.length > 80 ? isiPesan.substring(0, 80) + '...' : isiPesan;
           
           tr.innerHTML = `
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index++}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${namaTemplate}</td>
             <td class="px-6 py-4 text-sm text-gray-500 whitespace-pre-line">${preview}</td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
               <button onclick="window.editTemplate('${docSnap.id}')" class="text-blue-600 hover:text-blue-900 mx-2" title="Edit">
                 <span class="material-icons text-xl">edit</span>
               </button>
-              <button onclick="window.deleteTemplateBtn('${docSnap.id}', '${data.name}')" class="text-red-600 hover:text-red-900" title="Hapus">
+              <button onclick="window.deleteTemplateBtn('${docSnap.id}', '${namaTemplate}')" class="text-red-600 hover:text-red-900" title="Hapus">
                 <span class="material-icons text-xl">delete</span>
               </button>
             </td>
@@ -176,7 +180,8 @@
 
           // Simpan data di global variable untuk mode edit
           window.templatesData = window.templatesData || {};
-          window.templatesData[docSnap.id] = data;
+          // Pastikan menyimpan data yang sudah di-handle default-nya
+          window.templatesData[docSnap.id] = { name: namaTemplate, message: isiPesan };
         });
       } catch (error) {
         console.error("Error mengambil data:", error);
