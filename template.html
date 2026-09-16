@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Template WA - HR System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- SweetAlert2 untuk Notifikasi yang lebih cantik -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      color: #4b5563;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .nav-btn:hover {
+      background-color: #ebf5ff;
+      color: #2563eb;
+    }
+    .nav-btn.active {
+      background-color: #2563eb;
+      color: white;
+    }
+    .nav-btn .material-icons {
+      margin-right: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r shadow-sm flex flex-col hidden md:flex">
+    <div class="p-6 border-b text-center">
+      <h1 class="text-2xl font-bold text-blue-600">HR System</h1>
+      <p class="text-xs text-gray-500 mt-1">Template Management</p>
+    </div>
+    <div class="flex-1 p-4 space-y-2 overflow-y-auto">
+      <a href="index.html" class="nav-btn"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
+      <a href="calendar.html" class="nav-btn"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
+      <a href="analytics.html" class="nav-btn"><span class="material-icons">analytics</span> Analytics</a>
+      <a href="template.html" class="nav-btn active"><span class="material-icons">textsms</span> Master Template</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+    <!-- Header -->
+    <header class="bg-white border-b px-6 py-4 flex justify-between items-center z-10">
+      <h2 class="text-xl font-semibold text-gray-800">Manajemen Template WhatsApp</h2>
+      <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium transition-colors">
+        <span class="material-icons text-sm mr-2">add</span> Tambah Template Baru
+      </button>
+    </header>
+
+    <!-- Table Section -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">No</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Nama Template</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preview Pesan</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="templateTableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Data akan dimuat melalui JavaScript -->
+            <tr>
+              <td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data template...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Form Tambah/Edit Template -->
+  <div id="templateModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
+        <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">Tambah Template WA</h3>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto">
+        <form id="templateForm" class="space-y-4">
+          <input type="hidden" id="templateId">
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Template</label>
+            <input type="text" id="templateName" required placeholder="Contoh: Panggilan Interview Tahap 1" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Isi Pesan WhatsApp</label>
+            <div class="mb-2 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <strong>Tips Variabel:</strong> Anda dapat menggunakan variabel seperti <code>[Nama]</code>, <code>[Posisi]</code>, <code>[Tanggal]</code>, atau <code>[Waktu]</code> di dalam pesan. Nanti sistem akan menggantinya otomatis saat di Dashboard Seleksi.
+            </div>
+            <textarea id="templateMessage" required rows="8" placeholder="Halo [Nama], kami mengundang Anda untuk interview posisi [Posisi] pada tanggal [Tanggal]..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+        <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</button>
+        <button onclick="saveTemplate()" id="saveBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center">
+          <span class="material-icons text-sm mr-1">save</span> Simpan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Configuration & Logic -->
+  <script type="module">
+    // SESUAIKAN DENGAN KONFIGURASI FIREBASE ANDA
+    // Jika Anda sudah memiliki script Firebase terpisah (misal firebase-config.js),
+    // Anda bisa menyesuaikan bagian import ini.
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Masukkan Config Firebase Anda di sini
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
+      authDomain: "recruitmentupaznetats.firebaseapp.com",
+      projectId: "recruitmentupaznetats",
+      storageBucket: "recruitmentupaznetats.firebasestorage.app",
+      messagingSenderId: "907827986807",
+      appId: "1:907827986807:web:06a60cb242d1b2bac16172"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Fungsi untuk memuat data template
+    async function loadTemplates() {
+      const tbody = document.getElementById('templateTableBody');
+      try {
+        const querySnapshot = await getDocs(collection(db, "templates"));
+        tbody.innerHTML = ''; // Kosongkan tabel
+        
+        let index = 1;
+        
+        if (querySnapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada template. Silakan tambah baru.</td></tr>`;
+          return;
+        }
+
+        querySnapshot.forEach((document) => {
+          const data = document.data();
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-gray-50 transition-colors";
+          
+          // Truncate message for preview
+          const preview = data.message.length > 80 ? data.message.substring(0, 80) + '...' : data.message;
+          
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index++}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.name}</td>
+            <td class="px-6 py-4 text-sm text-gray-500 whitespace-pre-line">${preview}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onclick="window.editTemplate('${document.id}')" class="text-blue-600 hover:text-blue-900 mx-2" title="Edit">
+                <span class="material-icons text-xl">edit</span>
+              </button>
+              <button onclick="window.deleteTemplateBtn('${document.id}', '${data.name}')" class="text-red-600 hover:text-red-900" title="Hapus">
+                <span class="material-icons text-xl">delete</span>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+
+          // Simpan data di global variable untuk mode edit
+          window.templatesData = window.templatesData || {};
+          window.templatesData[document.id] = data;
+        });
+      } catch (error) {
+        console.error("Error mengambil data:", error);
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data template.</td></tr>`;
+      }
+    }
+
+    // Modal Control Functions (dijadikan global ke window agar bisa diakses button HTML)
+    window.openModal = function() {
+      document.getElementById('modalTitle').innerText = "Tambah Template WA";
+      document.getElementById('templateId').value = "";
+      document.getElementById('templateName').value = "";
+      document.getElementById('templateMessage').value = "";
+      document.getElementById('templateModal').classList.remove('hidden');
+    }
+
+    window.closeModal = function() {
+      document.getElementById('templateModal').classList.add('hidden');
+    }
+
+    window.editTemplate = function(id) {
+      const data = window.templatesData[id];
+      document.getElementById('modalTitle').innerText = "Edit Template WA";
+      document.getElementById('templateId').value = id;
+      document.getElementById('templateName').value = data.name;
+      document.getElementById('templateMessage').value = data.message;
+      document.getElementById('templateModal').classList.remove('hidden');
+    }
+
+    window.saveTemplate = async function() {
+      const id = document.getElementById('templateId').value;
+      const name = document.getElementById('templateName').value.trim();
+      const message = document.getElementById('templateMessage').value.trim();
+      const btn = document.getElementById('saveBtn');
+
+      if (!name || !message) {
+        Swal.fire('Peringatan', 'Nama dan Isi Template tidak boleh kosong!', 'warning');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...`;
+
+      try {
+        if (id) {
+          // Update Mode
+          await updateDoc(doc(db, "templates", id), {
+            name: name,
+            message: message,
+            updatedAt: new Date()
+          });
+          Swal.fire('Berhasil!', 'Template berhasil diperbarui.', 'success');
+        } else {
+          // Create Mode
+          await addDoc(collection(db, "templates"), {
+            name: name,
+            message: message,
+            createdAt: new Date()
+          });
+          Swal.fire('Berhasil!', 'Template baru berhasil ditambahkan.', 'success');
+        }
+        closeModal();
+        loadTemplates(); // Reload data
+      } catch (error) {
+        console.error("Error saving document: ", error);
+        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan data.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-icons text-sm mr-1">save</span> Simpan`;
+      }
+    }
+
+    window.deleteTemplateBtn = function(id, name) {
+      Swal.fire({
+        title: 'Hapus Template?',
+        text: `Anda yakin ingin menghapus template "${name}"?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, hapus!',
+        cancelButtonText: 'Batal'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await deleteDoc(doc(db, "templates", id));
+            Swal.fire('Terhapus!', 'Template telah dihapus.', 'success');
+            loadTemplates(); // Reload data
+          } catch (error) {
+            console.error("Error deleting document: ", error);
+            Swal.fire('Error', 'Gagal menghapus template.', 'error');
+          }
+        }
+      });
+    }
+
+    // Panggil fungsi muat data saat pertama kali dijalankan
+    loadTemplates();
+  </script>
+</body>
+</html>
