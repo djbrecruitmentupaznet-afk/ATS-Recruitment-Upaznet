@@ -848,33 +848,61 @@
     };
 
     window.previewTemplate = function(appId) {
-      const idx = document.getElementById('sel_template').value;
-      const ta = document.getElementById('preview_wa');
-      if (idx === "") { ta.value = ""; return; }
-      
-      let text = templatesWA[idx].text;
-      const app = applicants.find(a => a.id === appId);
-      if (app) {
-        let tglFormat = '-';
-        if (app.JADWAL_INTERVIEW_HR && app.JADWAL_INTERVIEW_HR.includes('-')) {
-          const parts = app.JADWAL_INTERVIEW_HR.split('-');
-          const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
-          const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-          const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-          tglFormat = `${dayNames[dateObj.getDay()]}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
-        } else if (app.JADWAL_INTERVIEW_HR) { tglFormat = app.JADWAL_INTERVIEW_HR; }
-
-        let jamFormat = app.JAM_INTERVIEW_HR || '-';
-
-        text = text.replace(/\[NAMA\]/g, app.NAMA || '-');
-        text = text.replace(/\[POSISI\]/g, app.POSISI || '-');
-        text = text.replace(/\[ENTITAS\]/g, app.ENTITAS || '-');
-        text = text.replace(/\[PLATFORM\]/g, app.PLATFORM || '-');
-        text = text.replace(/\[JADWAL_INTERVIEW_HR\]/g, tglFormat);
-        text = text.replace(/\[JAM_INTERVIEW_HR\]/g, jamFormat);
+  const idx = document.getElementById('sel_template').value;
+  const ta = document.getElementById('preview_wa');
+  
+  if (idx === "") { 
+    ta.value = ""; 
+    return; 
+  }
+  
+  // Membaca template dari field .message (atau fallback ke .text)
+  let text = templatesWA[idx].message || templatesWA[idx].text || '';
+  
+  const app = applicants.find(a => a.id === appId);
+  if (app) {
+    // Fungsi Helper: Mengubah format YYYY-MM-DD menjadi "Hari, DD Bulan YYYY"
+    const formatTanggal = (tglAsli) => {
+      if (!tglAsli) return '-';
+      if (tglAsli.includes('-')) {
+        const parts = tglAsli.split('-');
+        const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+        const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+        return `${dayNames[dateObj.getDay()]}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
       }
-      ta.value = text;
+      return tglAsli;
     };
+
+    // 1. DATA UMUM KANDIDAT
+    text = text.replace(/\[NAMA\]/gi, app.NAMA || '-');
+    text = text.replace(/\[POSISI\]/gi, app.POSISI || '-');
+    text = text.replace(/\[ENTITAS\]/gi, app.ENTITAS || '-');
+    text = text.replace(/\[PLATFORM\]/gi, app.PLATFORM || '-');
+
+    // 2. DATA TAHAP HR
+    text = text.replace(/\[JADWAL_INTERVIEW_HR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_HR));
+    text = text.replace(/\[JAM_INTERVIEW_HR\]/gi, app.JAM_INTERVIEW_HR || '-');
+    text = text.replace(/\[METODE_INTERVIEW_HR\]/gi, app.METODE_INTERVIEW_HR || '-');
+
+    // 3. DATA TAHAP USER
+    text = text.replace(/\[JADWAL_INTERVIEW_USER\]/gi, formatTanggal(app.JADWAL_INTERVIEW_USER));
+    text = text.replace(/\[JAM_INTERVIEW_USER\]/gi, app.JAM_INTERVIEW_USER || '-');
+    text = text.replace(/\[METODE_INTERVIEW_USER\]/gi, app.METODE_INTERVIEW_USER || '-');
+
+    // 4. DATA TAHAP DIREKTUR
+    text = text.replace(/\[JADWAL_INTERVIEW_DIREKTUR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_DIREKTUR));
+    text = text.replace(/\[JAM_INTERVIEW_DIREKTUR\]/gi, app.JAM_INTERVIEW_DIREKTUR || '-');
+    text = text.replace(/\[METODE_INTERVIEW_DIREKTUR\]/gi, app.METODE_INTERVIEW_DIREKTUR || '-');
+
+    // 5. DATA OFFERING & ONBOARDING (Bonus jika Anda membutuhkannya)
+    text = text.replace(/\[TANGGAL_OFFERING\]/gi, formatTanggal(app.TANGGAL_OFFERING_LETTER));
+    text = text.replace(/\[DEADLINE_OFFERING\]/gi, formatTanggal(app.DEADLINE_OFFERING_LETTER));
+    text = text.replace(/\[TANGGAL_ONBOARDING\]/gi, formatTanggal(app.TANGGAL_ONBOARDING));
+  }
+  
+  ta.value = text;
+};
 
     window.tutupModalTemplate = function() { document.getElementById('modalTemplateContainer').innerHTML = ''; };
 
