@@ -12,6 +12,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Binding Firestore ke Window (agar bisa diakses oleh fungsi lokal di HTML)
 window.db = getFirestore(app);
 window.collection = collection;
 window.getDocs = getDocs;
@@ -20,6 +22,7 @@ window.setDoc = setDoc;
 window.updateDoc = updateDoc;
 window.deleteDoc = deleteDoc;
 
+// Binding Auth ke Window
 const auth = getAuth(app);
 window.auth = auth;
 window.signInWithEmailAndPassword = signInWithEmailAndPassword;
@@ -28,7 +31,7 @@ window.setPersistence = setPersistence;
 window.browserLocalPersistence = browserLocalPersistence;
 window.browserSessionPersistence = browserSessionPersistence;
 
-// AUTH CHECKER (Penjaga Pintu)
+// AUTH CHECKER GLOBAL (Penjaga Pintu)
 onAuthStateChanged(auth, (user) => {
   const loginOverlay = document.getElementById('loginOverlay');
   const authGuardOverlay = document.getElementById('authGuardOverlay');
@@ -43,15 +46,18 @@ onAuthStateChanged(auth, (user) => {
       window.initApp();
     }
   } else {
+    // Jika ada elemen loginOverlay (berarti di index.html), tampilkan login
     if (loginOverlay) {
       loginOverlay.style.display = 'flex';
       if (loadingOverlay) loadingOverlay.style.display = 'none';
     } else {
+      // Jika di halaman lain (analytics/calendar), tendang ke index.html
       window.location.href = 'index.html';
     }
   }
 });
 
+// FUNGSI LOGOUT GLOBAL
 window.logoutApp = async function() {
   if (confirm("Yakin ingin keluar dari sistem?")) {
     await window.signOut(window.auth);
@@ -63,6 +69,7 @@ window.logoutApp = async function() {
   }
 }
 
+// FUNGSI TOGGLE FILTER GLOBAL
 window.toggleFilters = function() {
   const filterContainer = document.getElementById('filterContainer');
   if (filterContainer) {
@@ -70,6 +77,7 @@ window.toggleFilters = function() {
   }
 };
 
+// FUNGSI UPLOAD GOOGLE DRIVE (GAS) GLOBAL
 const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
 window.uploadFileToDriveGAS = async function(base64Data, fileName) {
   try {
