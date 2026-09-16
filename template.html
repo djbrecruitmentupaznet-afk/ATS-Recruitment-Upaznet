@@ -198,6 +198,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    // TAMBAHAN: Import modul Authentication
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
@@ -210,6 +212,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app); // Inisialisasi Auth
 
     // ==========================================
     // LOGIKA TAB NAVIGATION
@@ -226,43 +229,37 @@
       if (tab === 'wa') {
         pageTitle.innerText = "Manajemen Template WhatsApp";
         
-        // Tab Styling
         tabWa.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
         tabWa.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
         
         tabLokasi.classList.add('border-transparent', 'text-gray-500', 'font-medium');
         tabLokasi.classList.remove('border-emerald-600', 'text-emerald-600', 'font-semibold');
 
-        // View Visibility
         viewWa.classList.remove('hidden');
         viewLokasi.classList.add('hidden');
 
-        // Button Visibility
         btnAddWA.classList.remove('hidden');
         btnAddLokasi.classList.add('hidden');
 
       } else if (tab === 'lokasi') {
         pageTitle.innerText = "Master Data Lokasi Interview";
 
-        // Tab Styling
         tabLokasi.classList.add('border-emerald-600', 'text-emerald-600', 'font-semibold');
         tabLokasi.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
         
         tabWa.classList.add('border-transparent', 'text-gray-500', 'font-medium');
         tabWa.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
 
-        // View Visibility
         viewLokasi.classList.remove('hidden');
         viewWa.classList.add('hidden');
 
-        // Button Visibility
         btnAddLokasi.classList.remove('hidden');
         btnAddWA.classList.add('hidden');
       }
     }
 
     // ==========================================
-    // LOGIKA TEMPLATE WA (TETAP SAMA SEPERTI LAMA)
+    // LOGIKA TEMPLATE WA
     // ==========================================
     async function loadTemplates() {
       const tbody = document.getElementById('templateTableBody');
@@ -304,7 +301,7 @@
           window.templatesData[docSnap.id] = { name: namaTemplate, message: isiPesan };
         });
       } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data template.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data template. Cek koneksi & hak akses.</td></tr>`;
       }
     }
 
@@ -374,7 +371,7 @@
     }
 
     // ==========================================
-    // LOGIKA DATA LOKASI (FITUR BARU)
+    // LOGIKA DATA LOKASI
     // ==========================================
     async function loadLocations() {
       const tbody = document.getElementById('locationTableBody');
@@ -485,9 +482,20 @@
       });
     }
 
-    // Panggil fungsi muat data saat pertama kali dijalankan
-    loadTemplates();
-    loadLocations(); // Muat data lokasi
+    // ==========================================
+    // PENGECEKAN AUTENTIKASI (PENTING!)
+    // ==========================================
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Jika sudah login, barulah tarik data dari database
+        loadTemplates();
+        loadLocations();
+      } else {
+        // Jika belum login / tidak ada token Auth, kembali ke halaman Dashboard (index.html)
+        window.location.href = 'index.html';
+      }
+    });
+
   </script>
 </body>
 </html>
