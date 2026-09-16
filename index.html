@@ -371,6 +371,21 @@
       return "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"; 
     }
 
+    // FUNGSI BARU: Untuk mengecek apakah kandidat berhak masuk filter "Belum Diproses"
+    function isEligibleForTahap(app, tahap) {
+      // Jika statusnya sudah diisi (tidak kuning), berarti SUDAH DIPROSES, jadi abaikan.
+      if (!isKuning(getTriggerVal(app, tahap))) return false;
+
+      // Jika belum diisi, cek apakah dia LOLOS dari tahap sebelumnya
+      if (tahap === 'HR') return true; 
+      if (tahap === 'User') return getTriggerVal(app, 'HR') === 'Lolos';
+      if (tahap === 'Direktur') return getTriggerVal(app, 'User') === 'Lolos';
+      if (tahap === 'Offering') return getTriggerVal(app, 'Direktur') === 'Lolos';
+      if (tahap === 'Onboarding') return getTriggerVal(app, 'Offering') === 'Diterima';
+      
+      return false;
+    }
+
     window.renderTable = function() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
       
@@ -385,7 +400,9 @@
                 String(app.NOMOR_WA || '').includes(searchTerm) || 
                 String(app.POSISI || '').toLowerCase().includes(searchTerm));
                 
-        const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.some(t => isKuning(getTriggerVal(app, t)));
+        // MENGGUNAKAN FUNGSI LOGIKA BARU DI SINI
+        const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.some(t => isEligibleForTahap(app, t));
+        
         const matchPlatform = checkedPlatform.length === 0 || checkedPlatform.includes(app.PLATFORM);
         const matchPosisi = checkedPosisi.length === 0 || checkedPosisi.includes(app.POSISI);
         const matchEntitas = checkedEntitas.length === 0 || checkedEntitas.includes(app.ENTITAS);
