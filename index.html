@@ -16,9 +16,7 @@
 </head>
 <body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800 relative">
 
-  <!-- ========================================== -->
-  <!-- HALAMAN LOGIN (Menutupi seluruh layar) -->
-  <!-- ========================================== -->
+  <!-- HALAMAN LOGIN -->
   <div id="loginOverlay" style="display: none;" class="fixed inset-0 bg-gray-100 z-[1000] flex items-center justify-center backdrop-blur-sm">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
       <div class="text-center mb-6">
@@ -70,10 +68,8 @@
       <a href="index.html" class="nav-btn active"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
       <a href="calendar.html" class="nav-btn"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
       <a href="analytics.html" class="nav-btn"><span class="material-icons">analytics</span> Analytics</a>
-      <!-- Menu Baru Master Template -->
       <a href="template.html" class="nav-btn"><span class="material-icons">textsms</span> Master Template</a>
     </div>
-    <!-- TOMBOL LOGOUT BARU -->
     <div class="p-4 border-t border-gray-200">
       <button onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold transition-colors border border-red-100 shadow-sm">
         <span class="material-icons text-[18px]">logout</span> Keluar (Logout)
@@ -84,7 +80,6 @@
   <!-- MAIN DASHBOARD -->
   <main class="flex-1 overflow-auto p-6 relative">
     <div class="max-w-[1500px] mx-auto bg-white rounded-xl shadow-md border border-gray-200 flex flex-col">
-      
       <!-- Toolbar Atas -->
       <div class="p-5 border-b border-gray-200 flex justify-between items-center">
         <div>
@@ -159,16 +154,12 @@
   <div id="modalContainer"></div>
   <div id="modalTemplateContainer"></div>
 
-  <!-- ===================================== -->
-  <!-- SCRIPT FIREBASE HYBRID & LOGIKA UTAMA -->
-  <!-- ===================================== -->
+  <!-- SCRIPT FIREBASE -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    // IMPORT AUTHENTICATION
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
     const firebaseConfig = {
       apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
       authDomain: "recruitmentupaznetats.firebaseapp.com",
@@ -179,17 +170,14 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    
-    // Bind Firestore
     window.db = getFirestore(app);
     window.collection = collection;
     window.getDocs = getDocs;
     window.doc = doc;
     window.setDoc = setDoc;
     window.updateDoc = updateDoc;
-    window.deleteDoc = deleteDoc; // Tambahan untuk Hapus
+    window.deleteDoc = deleteDoc; 
 
-    // Bind Auth
     const auth = getAuth(app);
     window.auth = auth;
     window.signInWithEmailAndPassword = signInWithEmailAndPassword;
@@ -198,14 +186,11 @@
     window.browserLocalPersistence = browserLocalPersistence;
     window.browserSessionPersistence = browserSessionPersistence;
 
-    // CEK STATUS LOGIN SAAT WEB DIBUKA
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Jika sudah login, hilangkan overlay login dan muat data table
         document.getElementById('loginOverlay').style.display = 'none';
         window.initApp(); 
       } else {
-        // Jika belum login, tampilkan layar login, matikan loading
         document.getElementById('loginOverlay').style.display = 'flex';
         document.getElementById('loadingOverlay').style.display = 'none';
       }
@@ -217,11 +202,10 @@
     let selectedApplicantData = null;
     let tempFormData = {};
     let templatesWA = []; 
+    let locationsData = []; // VARIABEL BARU UNTUK MENAMPUNG LOKASI
 
-    // 2. MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
     const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
 
-    // FUNGSI LOGIN SISTEM
     window.prosesLogin = async function() {
       const email = document.getElementById('loginEmail').value;
       const pass = document.getElementById('loginPassword').value;
@@ -234,13 +218,9 @@
       btn.disabled = true;
 
       try {
-        // Tentukan tipe persistence (Remember me = Local (selamanya), Tidak = Session (hilang saat tutup tab))
         const persistenceType = remember ? window.browserLocalPersistence : window.browserSessionPersistence;
         await window.setPersistence(window.auth, persistenceType);
-        
-        // Coba Login
         await window.signInWithEmailAndPassword(window.auth, email, pass);
-        // Jika berhasil, onAuthStateChanged (di script atas) akan otomatis menutup layar login
       } catch (error) {
         alert("Gagal Login: Email atau Password salah.");
         btn.innerHTML = `<span class="material-icons text-[18px]">login</span> Masuk Sistem`;
@@ -248,23 +228,32 @@
       }
     }
 
-    // FUNGSI LOGOUT SISTEM
     window.logoutApp = async function() {
       if (confirm("Yakin ingin keluar dari sistem?")) {
         await window.signOut(window.auth);
-        window.location.reload(); // Muat ulang halaman ke layar login
+        window.location.reload(); 
       }
     }
 
     window.initApp = async function() {
       try {
         document.getElementById('loadingOverlay').style.display = 'flex'; 
+        
+        // 1. Fetch Template WA
         try {
           const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
           templatesWA = [];
           templatesSnapshot.forEach(doc => templatesWA.push(doc.data()));
         } catch(e) {}
 
+        // 2. Fetch Master Lokasi
+        try {
+          const locationsSnapshot = await window.getDocs(window.collection(window.db, "locations"));
+          locationsData = [];
+          locationsSnapshot.forEach(doc => locationsData.push({ id: doc.id, ...doc.data() }));
+        } catch(e) {}
+
+        // 3. Fetch Applicants
         const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
         applicants = [];
         applicantsSnapshot.forEach(doc => {
@@ -439,7 +428,6 @@
             </div>
           </td>
           <td class="py-3 px-4">
-            <!-- PENAMBAHAN TOMBOL HAPUS DI SINI -->
             <div class="flex justify-center gap-2">
                <button onclick="openModal('EditCandidate', '${app.id}')" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg shadow-sm transition-colors" title="Edit Data Kandidat">
                  <span class="material-icons text-[16px]">edit</span>
@@ -453,7 +441,6 @@
       `).join('');
     };
 
-    // FUNGSI HAPUS KANDIDAT KESELURUHAN (HARD DELETE)
     window.hapusKandidat = async function(idApp, namaApp) {
       const isConfirm = confirm(`⚠️ PERINGATAN!\n\nApakah Anda yakin ingin menghapus "${namaApp}" secara permanen dari database? Data yang dihapus tidak dapat dikembalikan.`);
       
@@ -463,7 +450,7 @@
         
         try {
           await window.deleteDoc(window.doc(window.db, "applicants", idApp));
-          await window.initApp(); // Refresh ulang data setelah dihapus
+          await window.initApp(); 
         } catch (err) {
           alert("Gagal menghapus kandidat: " + err.message);
         } finally {
@@ -481,6 +468,49 @@
       } else {
         inputObj.classList.add('hidden');
         inputObj.value = ''; 
+      }
+    };
+
+    // LOGIKA DINAMIS UNTUK METODE INTERVIEW ONLINE/OFFLINE
+    window.handleMetodeChange = function() {
+      const metode = document.getElementById('fm_metode').value;
+      const containerOnline = document.getElementById('container_online');
+      const containerOffline = document.getElementById('container_offline');
+      
+      if(metode === 'Online') {
+        containerOnline.classList.remove('hidden');
+        containerOffline.classList.add('hidden');
+      } else if(metode === 'Offline') {
+        containerOnline.classList.add('hidden');
+        containerOffline.classList.remove('hidden');
+      } else {
+        containerOnline.classList.add('hidden');
+        containerOffline.classList.add('hidden');
+      }
+    };
+
+    window.handleLokasiChange = function() {
+      const sel = document.getElementById('fm_lokasi');
+      const opt = sel.options[sel.selectedIndex];
+      if(!opt || sel.value === "") {
+         document.getElementById('fm_nama_lokasi').value = "";
+         document.getElementById('fm_gmaps').value = "";
+         document.getElementById('lbl_gmaps').href = "#";
+         document.getElementById('lbl_gmaps').innerText = "-";
+         return;
+      }
+      const nama = opt.getAttribute('data-nama') || '';
+      const gmaps = opt.getAttribute('data-gmaps') || '';
+      document.getElementById('fm_nama_lokasi').value = nama;
+      document.getElementById('fm_gmaps').value = gmaps;
+      
+      const lbl = document.getElementById('lbl_gmaps');
+      if(gmaps && gmaps !== '-') {
+        lbl.href = gmaps;
+        lbl.innerText = gmaps;
+      } else {
+        lbl.href = '#';
+        lbl.innerText = '-';
       }
     };
 
@@ -584,13 +614,39 @@
               <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jadwal Interview ${type}</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JADWAL_INTERVIEW_'+t]||''}"></div>
               <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jam Interview</label><input type="time" id="fm_jam" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JAM_INTERVIEW_'+t]||''}"></div>
               
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label>
+                <select id="fm_metode" onchange="handleMetodeChange()" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none">
+                  <option value="">-- Pilih --</option>
+                  <option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option>
+                  <option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option>
+                </select>
+              </div>
+
+              <div id="container_online" class="space-y-1.5 md:col-span-1 ${a['METODE_INTERVIEW_'+t]==='Online' ? '' : 'hidden'}">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Link Google Meet</label>
+                <input type="url" id="fm_link_meet" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" placeholder="https://meet.google.com/..." value="${a['LINK_MEET_'+t]||''}">
+              </div>
+
+              <div id="container_offline" class="space-y-1.5 md:col-span-1 ${a['METODE_INTERVIEW_'+t]==='Offline' ? '' : 'hidden'}">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Pilih Lokasi</label>
+                <select id="fm_lokasi" onchange="handleLokasiChange()" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none">
+                  <option value="">-- Pilih Lokasi --</option>
+                  ${locationsData.map(loc => `<option value="${loc.id}" data-nama="${loc.nama}" data-gmaps="${loc.gmaps}" ${a['ID_LOKASI_'+t] === loc.id ? 'selected' : ''}>${loc.nama}</option>`).join('')}
+                </select>
+                <div class="mt-2 text-[11px] text-gray-600 break-all bg-gray-50 p-2 border rounded">
+                  <strong>Gmaps:</strong> <a href="${a['GMAPS_'+t]||'#'}" id="lbl_gmaps" target="_blank" class="text-blue-500 hover:underline">${a['GMAPS_'+t]||'-'}</a>
+                  <input type="hidden" id="fm_nama_lokasi" value="${a['NAMA_LOKASI_'+t]||''}">
+                  <input type="hidden" id="fm_gmaps" value="${a['GMAPS_'+t]||''}">
+                </div>
+              </div>
+              
               <div class="md:col-span-2 flex justify-end pb-2 border-b border-gray-100">
                 <button onclick="simpanTanpaTutup('${type}')" class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm flex items-center gap-1 transition-colors">
-                  <span class="material-icons text-[14px]">save</span> Simpan Tanggal & Jam
+                  <span class="material-icons text-[14px]">save</span> Simpan Tgl, Jam & Metode
                 </button>
               </div>
 
-              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label><select id="fm_metode" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option><option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option></select></div>
               <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kesediaan Hadir</label><select id="fm_sedia" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Bersedia'?'selected':''}>Bersedia</option><option value="Tidak Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Bersedia'?'selected':''}>Tidak Bersedia</option><option value="Tidak Merespon" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Merespon'?'selected':''}>Tidak Merespon</option></select></div>
               <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kehadiran Aktual</label><select id="fm_hadir" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Hadir'?'selected':''}>Hadir</option><option value="Tidak Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Tidak Hadir'?'selected':''}>Tidak Hadir</option></select></div>
               
@@ -733,6 +789,7 @@
       }
     };
 
+    // PENYIMPANAN SELURUH DATA TERMASUK METODE INTERVIEW
     window.simpanTahap = async function(type) {
       document.getElementById('loadingText').innerText = "Memperbarui Tahapan...";
       document.getElementById('loadingOverlay').style.display = 'flex'; 
@@ -744,6 +801,19 @@
           payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
           payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
           payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          
+          if (payload[`METODE_INTERVIEW_${t}`] === 'Online') {
+            payload[`LINK_MEET_${t}`] = document.getElementById('fm_link_meet').value;
+            payload[`ID_LOKASI_${t}`] = '';
+            payload[`NAMA_LOKASI_${t}`] = '';
+            payload[`GMAPS_${t}`] = '';
+          } else if (payload[`METODE_INTERVIEW_${t}`] === 'Offline') {
+            payload[`LINK_MEET_${t}`] = '';
+            payload[`ID_LOKASI_${t}`] = document.getElementById('fm_lokasi').value;
+            payload[`NAMA_LOKASI_${t}`] = document.getElementById('fm_nama_lokasi').value;
+            payload[`GMAPS_${t}`] = document.getElementById('fm_gmaps').value;
+          }
+
           payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
           payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
           payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
@@ -777,6 +847,7 @@
       }
     };
 
+    // PENYIMPANAN SEMENTARA HANYA UNTUK TANGGAL, JAM, METODE
     window.simpanTanpaTutup = async function(type) {
       document.getElementById('loadingText').innerText = "Menyimpan Data Sementara...";
       document.getElementById('loadingOverlay').style.display = 'flex'; 
@@ -788,19 +859,23 @@
           payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
           payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
           payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
-          payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
-          payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
-          payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
-          payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
-          if (type === 'HR') {
-            payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
-            payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
+          
+          if (payload[`METODE_INTERVIEW_${t}`] === 'Online') {
+            payload[`LINK_MEET_${t}`] = document.getElementById('fm_link_meet').value;
+            payload[`ID_LOKASI_${t}`] = '';
+            payload[`NAMA_LOKASI_${t}`] = '';
+            payload[`GMAPS_${t}`] = '';
+          } else if (payload[`METODE_INTERVIEW_${t}`] === 'Offline') {
+            payload[`LINK_MEET_${t}`] = '';
+            payload[`ID_LOKASI_${t}`] = document.getElementById('fm_lokasi').value;
+            payload[`NAMA_LOKASI_${t}`] = document.getElementById('fm_nama_lokasi').value;
+            payload[`GMAPS_${t}`] = document.getElementById('fm_gmaps').value;
           }
         }
 
         await window.updateDoc(window.doc(window.db, "applicants", selectedApplicantData.id), payload);
         await window.initApp();
-        alert("Tanggal berhasil disimpan! Anda sekarang bisa klik tombol 'Undang WA'.");
+        alert("Tanggal, Jam, dan Metode berhasil disimpan! Anda sekarang bisa klik tombol 'Hubungi WA Kandidat'.");
       } catch (err) {
         alert("Error: " + err.message);
       } finally {
@@ -831,7 +906,7 @@
               </div>
               <div class="space-y-1.5">
                 <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Preview Pesan WA</label>
-                <textarea id="preview_wa" rows="8" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none text-sm bg-gray-50 text-gray-800 font-medium leading-relaxed" placeholder="Pilih template untuk melihat isi pesan..."></textarea>
+                <textarea id="preview_wa" rows="12" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none text-sm bg-gray-50 text-gray-800 font-medium leading-relaxed" placeholder="Pilih template untuk melihat isi pesan..."></textarea>
                 <p class="text-[10px] text-gray-500 mt-1">*Anda masih bisa menambahkan atau mengedit teks di atas sebelum dikirim</p>
               </div>
             </div>
@@ -848,61 +923,68 @@
     };
 
     window.previewTemplate = function(appId) {
-  const idx = document.getElementById('sel_template').value;
-  const ta = document.getElementById('preview_wa');
-  
-  if (idx === "") { 
-    ta.value = ""; 
-    return; 
-  }
-  
-  // Membaca template dari field .message (atau fallback ke .text)
-  let text = templatesWA[idx].message || templatesWA[idx].text || '';
-  
-  const app = applicants.find(a => a.id === appId);
-  if (app) {
-    // Fungsi Helper: Mengubah format YYYY-MM-DD menjadi "Hari, DD Bulan YYYY"
-    const formatTanggal = (tglAsli) => {
-      if (!tglAsli) return '-';
-      if (tglAsli.includes('-')) {
-        const parts = tglAsli.split('-');
-        const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
-        const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-        const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        return `${dayNames[dateObj.getDay()]}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
+      const idx = document.getElementById('sel_template').value;
+      const ta = document.getElementById('preview_wa');
+      
+      if (idx === "") { 
+        ta.value = ""; 
+        return; 
       }
-      return tglAsli;
+      
+      let text = templatesWA[idx].message || templatesWA[idx].text || '';
+      const app = applicants.find(a => a.id === appId);
+      
+      if (app) {
+        const formatTanggal = (tglAsli) => {
+          if (!tglAsli) return '-';
+          if (tglAsli.includes('-')) {
+            const parts = tglAsli.split('-');
+            const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+            const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${dayNames[dateObj.getDay()]}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
+          }
+          return tglAsli;
+        };
+
+        // 1. DATA UMUM
+        text = text.replace(/\[NAMA\]/gi, app.NAMA || '-');
+        text = text.replace(/\[POSISI\]/gi, app.POSISI || '-');
+        text = text.replace(/\[ENTITAS\]/gi, app.ENTITAS || '-');
+        text = text.replace(/\[PLATFORM\]/gi, app.PLATFORM || '-');
+
+        // 2. DATA TAHAP HR
+        text = text.replace(/\[JADWAL_INTERVIEW_HR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_HR));
+        text = text.replace(/\[JAM_INTERVIEW_HR\]/gi, app.JAM_INTERVIEW_HR || '-');
+        text = text.replace(/\[METODE_INTERVIEW_HR\]/gi, app.METODE_INTERVIEW_HR || '-');
+        text = text.replace(/\[LINK_MEET_HR\]/gi, app.LINK_MEET_HR || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_HR\]/gi, app.NAMA_LOKASI_HR || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_HR\]/gi, app.GMAPS_HR || '-');
+
+        // 3. DATA TAHAP USER
+        text = text.replace(/\[JADWAL_INTERVIEW_USER\]/gi, formatTanggal(app.JADWAL_INTERVIEW_USER));
+        text = text.replace(/\[JAM_INTERVIEW_USER\]/gi, app.JAM_INTERVIEW_USER || '-');
+        text = text.replace(/\[METODE_INTERVIEW_USER\]/gi, app.METODE_INTERVIEW_USER || '-');
+        text = text.replace(/\[LINK_MEET_USER\]/gi, app.LINK_MEET_USER || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_USER\]/gi, app.NAMA_LOKASI_USER || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_USER\]/gi, app.GMAPS_USER || '-');
+
+        // 4. DATA TAHAP DIREKTUR
+        text = text.replace(/\[JADWAL_INTERVIEW_DIREKTUR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_DIREKTUR));
+        text = text.replace(/\[JAM_INTERVIEW_DIREKTUR\]/gi, app.JAM_INTERVIEW_DIREKTUR || '-');
+        text = text.replace(/\[METODE_INTERVIEW_DIREKTUR\]/gi, app.METODE_INTERVIEW_DIREKTUR || '-');
+        text = text.replace(/\[LINK_MEET_DIREKTUR\]/gi, app.LINK_MEET_DIREKTUR || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_DIREKTUR\]/gi, app.NAMA_LOKASI_DIREKTUR || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_DIREKTUR\]/gi, app.GMAPS_DIREKTUR || '-');
+
+        // 5. LAINNYA
+        text = text.replace(/\[TANGGAL_OFFERING\]/gi, formatTanggal(app.TANGGAL_OFFERING_LETTER));
+        text = text.replace(/\[DEADLINE_OFFERING\]/gi, formatTanggal(app.DEADLINE_OFFERING_LETTER));
+        text = text.replace(/\[TANGGAL_ONBOARDING\]/gi, formatTanggal(app.TANGGAL_ONBOARDING));
+      }
+      
+      ta.value = text;
     };
-
-    // 1. DATA UMUM KANDIDAT
-    text = text.replace(/\[NAMA\]/gi, app.NAMA || '-');
-    text = text.replace(/\[POSISI\]/gi, app.POSISI || '-');
-    text = text.replace(/\[ENTITAS\]/gi, app.ENTITAS || '-');
-    text = text.replace(/\[PLATFORM\]/gi, app.PLATFORM || '-');
-
-    // 2. DATA TAHAP HR
-    text = text.replace(/\[JADWAL_INTERVIEW_HR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_HR));
-    text = text.replace(/\[JAM_INTERVIEW_HR\]/gi, app.JAM_INTERVIEW_HR || '-');
-    text = text.replace(/\[METODE_INTERVIEW_HR\]/gi, app.METODE_INTERVIEW_HR || '-');
-
-    // 3. DATA TAHAP USER
-    text = text.replace(/\[JADWAL_INTERVIEW_USER\]/gi, formatTanggal(app.JADWAL_INTERVIEW_USER));
-    text = text.replace(/\[JAM_INTERVIEW_USER\]/gi, app.JAM_INTERVIEW_USER || '-');
-    text = text.replace(/\[METODE_INTERVIEW_USER\]/gi, app.METODE_INTERVIEW_USER || '-');
-
-    // 4. DATA TAHAP DIREKTUR
-    text = text.replace(/\[JADWAL_INTERVIEW_DIREKTUR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_DIREKTUR));
-    text = text.replace(/\[JAM_INTERVIEW_DIREKTUR\]/gi, app.JAM_INTERVIEW_DIREKTUR || '-');
-    text = text.replace(/\[METODE_INTERVIEW_DIREKTUR\]/gi, app.METODE_INTERVIEW_DIREKTUR || '-');
-
-    // 5. DATA OFFERING & ONBOARDING (Bonus jika Anda membutuhkannya)
-    text = text.replace(/\[TANGGAL_OFFERING\]/gi, formatTanggal(app.TANGGAL_OFFERING_LETTER));
-    text = text.replace(/\[DEADLINE_OFFERING\]/gi, formatTanggal(app.DEADLINE_OFFERING_LETTER));
-    text = text.replace(/\[TANGGAL_ONBOARDING\]/gi, formatTanggal(app.TANGGAL_ONBOARDING));
-  }
-  
-  ta.value = text;
-};
 
     window.tutupModalTemplate = function() { document.getElementById('modalTemplateContainer').innerHTML = ''; };
 
