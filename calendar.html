@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadwal Interview - ATS PT Dimensi Jaringan Bersinar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden text-sm">
+
+  <!-- Auth Guard Overlay (Mencegah tampilan berkedip sebelum redirect jika belum login) -->
+  <div id="authGuardOverlay" class="fixed inset-0 bg-gray-50 z-[60] flex flex-col items-center justify-center">
+    <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600 mb-3"></div>
+    <span class="text-sm font-semibold text-gray-500">Memeriksa sesi...</span>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-[70] flex items-center justify-center" style="display: none;">
+    <div class="bg-white p-5 rounded-xl shadow-2xl flex flex-col items-center gap-3">
+      <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
+      <span class="text-sm font-semibold text-gray-700">Memuat Jadwal...</span>
+    </div>
+  </div>
+
+  <!-- Sidebar Placeholder -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+    
+    <!-- Top Header -->
+    <header class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center flex-shrink-0">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Jadwal Interview</h2>
+        <p class="text-gray-500 text-sm mt-1">Kelola dan pantau agenda wawancara pelamar</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="loadSchedules()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+          <span class="material-icons text-[20px]">refresh</span> Refresh
+        </button>
+        <button onclick="openAddScheduleModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors shadow-sm">
+          <span class="material-icons text-[20px]">event</span> Buat Jadwal
+        </button>
+      </div>
+    </header>
+
+    <!-- Schedule Content -->
+    <div class="flex-1 overflow-auto p-8 hide-scrollbar">
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden p-6">
+        
+        <h3 class="text-lg font-bold text-gray-800 mb-6 border-b pb-3">Agenda Mendatang</h3>
+        
+        <div id="scheduleList" class="space-y-4">
+          <!-- Data jadwal akan dimuat di sini oleh Javascript -->
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptySchedule" class="hidden flex-col items-center justify-center py-12 text-center">
+          <span class="material-icons text-gray-300 text-6xl mb-4">event_busy</span>
+          <h3 class="text-lg font-bold text-gray-700">Tidak ada jadwal</h3>
+          <p class="text-gray-500 text-sm mt-1">Belum ada agenda interview dalam waktu dekat.</p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Script Pemanggilan Sidebar -->
+  <script src="sidebar.js"></script>
+  <script>
+    // Memanggil sidebar dan memberikan class active pada id 'nav-calendar'
+    window.loadSidebar('nav-calendar');
+  </script>
+  
+  <script type="module" src="main.js"></script>
+  
+  <script type="module">
+    // --- LOKAL LOGIC KHUSUS CALENDAR.HTML ---
+    
+    // Fungsi Inisialisasi yang dipanggil oleh main.js setelah login tervalidasi
+    window.initApp = async function() {
+      await loadSchedules();
+    };
+
+    // Simulasi atau Fetch mengambil data jadwal dari Firestore
+    window.loadSchedules = async function() {
+      const loader = document.getElementById('loadingOverlay');
+      const scheduleList = document.getElementById('scheduleList');
+      const emptySchedule = document.getElementById('emptySchedule');
+      
+      loader.style.display = 'flex';
+      
+      try {
+        // Logika query Firestore untuk mengambil kandidat dengan status "Interview"
+        const querySnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        let interviews = [];
+        
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          // Anggap kita memfilter data yang statusnya 'Interview' dan memiliki jadwal
+          if(data.status === 'Interview' && data.jadwalInterview) {
+            interviews.push({ id: doc.id, ...data });
+          }
+        });
+
+        scheduleList.innerHTML = '';
+
+        if(interviews.length === 0) {
+          emptySchedule.classList.remove('hidden');
+          emptySchedule.classList.add('flex');
+        } else {
+          emptySchedule.classList.add('hidden');
+          emptySchedule.classList.remove('flex');
+          
+          interviews.forEach(interview => {
+            const card = document.createElement('div');
+            card.className = "flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:shadow-md transition-shadow bg-blue-50/30";
+            card.innerHTML = `
+              <div class="flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-600 p-3 rounded-full flex items-center justify-center">
+                  <span class="material-icons">person</span>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 text-base">${interview.nama || 'Nama Tidak Diketahui'}</h4>
+                  <p class="text-xs font-semibold text-gray-500 mt-0.5">Posisi: <span class="text-blue-600">${interview.posisi || '-'}</span></p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="flex items-center justify-end gap-1 text-sm font-bold text-gray-700">
+                  <span class="material-icons text-[16px] text-gray-400">schedule</span> 
+                  ${interview.jadwalInterview || '-'}
+                </div>
+                <button onclick="alert('Mulai meeting atau lihat detail untuk id: ${interview.id}')" class="mt-2 text-xs bg-white border border-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-100 font-semibold transition-colors">
+                  Detail / Aksi
+                </button>
+              </div>
+            `;
+            scheduleList.appendChild(card);
+          });
+        }
+      } catch (error) {
+        console.error("Error mengambil data jadwal:", error);
+        // Fallback jika error atau database masih kosong, kita tunjukkan empty state saja
+        emptySchedule.classList.remove('hidden');
+        emptySchedule.classList.add('flex');
+      } finally {
+        loader.style.display = 'none';
+      }
+    };
+
+    window.openAddScheduleModal = function() {
+      alert("Modal Buat Jadwal akan terbuka di sini.");
+    };
+  </script>
+</body>
+</html>

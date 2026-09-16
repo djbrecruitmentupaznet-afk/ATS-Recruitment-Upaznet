@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - ATS PT Dimensi Jaringan Bersinar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden text-sm">
+
+  <!-- Auth Guard Overlay -->
+  <div id="authGuardOverlay" class="fixed inset-0 bg-gray-50 z-[60] flex flex-col items-center justify-center">
+    <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600 mb-3"></div>
+    <span class="text-sm font-semibold text-gray-500">Memeriksa sesi...</span>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-[70] flex items-center justify-center" style="display: none;">
+    <div class="bg-white p-5 rounded-xl shadow-2xl flex flex-col items-center gap-3">
+      <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
+      <span class="text-sm font-semibold text-gray-700">Mengkalkulasi Data...</span>
+    </div>
+  </div>
+
+  <!-- Sidebar Placeholder -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+    
+    <!-- Top Header -->
+    <header class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center flex-shrink-0">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Analytics & Laporan</h2>
+        <p class="text-gray-500 text-sm mt-1">Ringkasan statistik data rekrutmen perusahaan</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="loadAnalytics()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+          <span class="material-icons text-[20px]">refresh</span> Segarkan Data
+        </button>
+        <button onclick="printReport()" class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors shadow-sm">
+          <span class="material-icons text-[20px]">print</span> Cetak Laporan
+        </button>
+      </div>
+    </header>
+
+    <!-- Analytics Content -->
+    <div class="flex-1 overflow-auto p-8 hide-scrollbar">
+      
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        
+        <!-- Card: Total Pelamar -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div class="bg-blue-100 text-blue-600 p-4 rounded-full flex items-center justify-center">
+            <span class="material-icons text-3xl">groups</span>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wide">Total Pelamar</p>
+            <h3 id="statTotal" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+          </div>
+        </div>
+
+        <!-- Card: Interview -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full flex items-center justify-center">
+            <span class="material-icons text-3xl">record_voice_over</span>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wide">Tahap Interview</p>
+            <h3 id="statInterview" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+          </div>
+        </div>
+
+        <!-- Card: Diterima -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div class="bg-green-100 text-green-600 p-4 rounded-full flex items-center justify-center">
+            <span class="material-icons text-3xl">how_to_reg</span>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wide">Diterima</p>
+            <h3 id="statDiterima" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+          </div>
+        </div>
+
+        <!-- Card: Ditolak -->
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div class="bg-red-100 text-red-600 p-4 rounded-full flex items-center justify-center">
+            <span class="material-icons text-3xl">person_remove</span>
+          </div>
+          <div>
+            <p class="text-gray-500 text-xs font-bold uppercase tracking-wide">Ditolak</p>
+            <h3 id="statDitolak" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Informasi Tambahan / Ruang untuk Grafik -->
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center">
+        <span class="material-icons text-gray-300 text-6xl mb-4 mt-8">bar_chart</span>
+        <h3 class="text-lg font-bold text-gray-700">Area Visualisasi Grafik</h3>
+        <p class="text-gray-500 text-sm mt-1 mb-8">Anda dapat mengintegrasikan library seperti Chart.js atau ApexCharts di sini pada pengembangan selanjutnya.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Script Pemanggilan Sidebar -->
+  <script src="sidebar.js"></script>
+  <script>
+    // Memanggil sidebar dan memberikan class active pada id 'nav-analytics'
+    window.loadSidebar('nav-analytics');
+  </script>
+  
+  <script type="module" src="main.js"></script>
+  
+  <script type="module">
+    // --- LOKAL LOGIC KHUSUS ANALYTICS.HTML ---
+    
+    window.initApp = async function() {
+      await loadAnalytics();
+    };
+
+    window.loadAnalytics = async function() {
+      const loader = document.getElementById('loadingOverlay');
+      loader.style.display = 'flex';
+      
+      try {
+        const querySnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        
+        let total = 0;
+        let interview = 0;
+        let diterima = 0;
+        let ditolak = 0;
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          total++;
+          
+          if(data.status === 'Interview') interview++;
+          else if(data.status === 'Diterima') diterima++;
+          else if(data.status === 'Ditolak') ditolak++;
+        });
+
+        // Update UI Dashboard Data
+        // Animasi angka (opsional, ditiadakan agar lebih ringan, langsung ganti teks)
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('statInterview').innerText = interview;
+        document.getElementById('statDiterima').innerText = diterima;
+        document.getElementById('statDitolak').innerText = ditolak;
+
+      } catch (error) {
+        console.error("Error mengambil data analytics:", error);
+        alert("Gagal mengkalkulasi data statistik.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    };
+
+    window.printReport = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Seleksi - ATS PT Dimensi Jaringan Bersinar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden text-sm">
+
+  <!-- Login Overlay -->
+  <div id="loginOverlay" class="fixed inset-0 bg-slate-50 z-50 flex flex-col items-center justify-center" style="display: none;">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+      <div class="text-center mb-8">
+        <img src="https://drive.google.com/thumbnail?id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF&sz=w800" class="h-16 mx-auto mb-4 object-contain" alt="Logo">
+        <h2 class="text-2xl font-bold text-gray-800">Login ATS</h2>
+        <p class="text-gray-500 text-sm mt-1">PT Dimensi Jaringan Bersinar</p>
+      </div>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="mb-5">
+          <label class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+          <input type="email" id="loginEmail" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="admin@upaznet.com" required>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+          <input type="password" id="loginPassword" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+          Masuk
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-[60] flex items-center justify-center" style="display: none;">
+    <div class="bg-white p-5 rounded-xl shadow-2xl flex flex-col items-center gap-3">
+      <div class="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
+      <span class="text-sm font-semibold text-gray-700">Memuat Data...</span>
+    </div>
+  </div>
+
+  <!-- Sidebar Placeholder -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden bg-gray-50">
+    
+    <!-- Top Header -->
+    <header class="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center flex-shrink-0">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Dashboard Seleksi</h2>
+        <p class="text-gray-500 text-sm mt-1">Kelola data pelamar dan proses rekrutmen</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="toggleFilters()" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-colors">
+          <span class="material-icons text-[20px]">filter_list</span> Filter
+        </button>
+        <button onclick="openAddModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors shadow-sm">
+          <span class="material-icons text-[20px]">add</span> Tambah Pelamar
+        </button>
+      </div>
+    </header>
+
+    <!-- Filter Section (Hidden by default) -->
+    <div id="filterContainer" class="hidden bg-white border-b border-gray-200 px-8 py-4 flex-shrink-0">
+      <div class="flex gap-4 items-end">
+        <div class="flex-1">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Cari Nama / Posisi</label>
+          <input type="text" id="searchInput" oninput="renderTable()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ketik kata kunci...">
+        </div>
+        <div class="w-48">
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Status</label>
+          <select id="statusFilter" onchange="renderTable()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none">
+            <option value="ALL">Semua Status</option>
+            <option value="Baru">Baru</option>
+            <option value="Interview">Interview</option>
+            <option value="Diterima">Diterima</option>
+            <option value="Ditolak">Ditolak</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Content -->
+    <div class="flex-1 overflow-auto p-8 hide-scrollbar">
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nama Pelamar</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Posisi</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal Apply</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+            <!-- Data baris akan dimuat di sini oleh Javascript -->
+          </tbody>
+        </table>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-12 text-center">
+          <span class="material-icons text-gray-300 text-6xl mb-4">folder_open</span>
+          <h3 class="text-lg font-bold text-gray-700">Belum ada data</h3>
+          <p class="text-gray-500 text-sm mt-1">Data pelamar akan muncul di sini.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Script Pemanggilan Sidebar & Module JS -->
+  <script src="sidebar.js"></script>
+  <script>
+    // Memanggil sidebar dan memberikan class active pada id 'nav-index'
+    window.loadSidebar('nav-index');
+  </script>
+  
+  <script type="module" src="main.js"></script>
+  
+  <script type="module">
+    // --- LOKAL LOGIC KHUSUS INDEX.HTML ---
+    let applicantsData = [];
+
+    // Fungsi Login
+    window.handleLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPassword').value;
+      const loader = document.getElementById('loadingOverlay');
+      
+      loader.style.display = 'flex';
+      try {
+        await window.signInWithEmailAndPassword(window.auth, email, pass);
+        // Jika sukses, onAuthStateChanged di main.js akan menyembunyikan form login
+      } catch(err) {
+        alert('Gagal login: Periksa kembali email dan password Anda.');
+        console.error(err);
+      } finally {
+        loader.style.display = 'none';
+      }
+    };
+
+    // Fungsi Inisialisasi yang dipanggil oleh main.js setelah login tervalidasi
+    window.initApp = async function() {
+      await loadData();
+    };
+
+    // Mengambil data dari Firestore
+    async function loadData() {
+      const loader = document.getElementById('loadingOverlay');
+      loader.style.display = 'flex';
+      try {
+        const querySnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        applicantsData = [];
+        querySnapshot.forEach((doc) => {
+          applicantsData.push({ id: doc.id, ...doc.data() });
+        });
+        renderTable();
+      } catch (error) {
+        console.error("Error mengambil data:", error);
+        alert("Gagal memuat data pelamar.");
+      } finally {
+        loader.style.display = 'none';
+      }
+    }
+
+    // Render tabel dengan filter
+    window.renderTable = function() {
+      const tbody = document.getElementById('tableBody');
+      const emptyState = document.getElementById('emptyState');
+      const searchVal = document.getElementById('searchInput')?.value.toLowerCase() || '';
+      const statusVal = document.getElementById('statusFilter')?.value || 'ALL';
+      
+      tbody.innerHTML = '';
+
+      const filtered = applicantsData.filter(app => {
+        const matchSearch = (app.nama || '').toLowerCase().includes(searchVal) || (app.posisi || '').toLowerCase().includes(searchVal);
+        const matchStatus = statusVal === 'ALL' || app.status === statusVal;
+        return matchSearch && matchStatus;
+      });
+
+      if(filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+      } else {
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+        
+        filtered.forEach(app => {
+          let statusColor = "bg-gray-100 text-gray-800";
+          if(app.status === 'Baru') statusColor = "bg-blue-100 text-blue-800";
+          if(app.status === 'Interview') statusColor = "bg-yellow-100 text-yellow-800";
+          if(app.status === 'Diterima') statusColor = "bg-green-100 text-green-800";
+          if(app.status === 'Ditolak') statusColor = "bg-red-100 text-red-800";
+
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-gray-50 transition-colors";
+          tr.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="font-bold text-gray-900">${app.nama || '-'}</div>
+              <div class="text-xs text-gray-500">${app.email || '-'}</div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${app.posisi || '-'}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${app.tanggalApply || '-'}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">
+                ${app.status || 'Baru'}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <button onclick="alert('Fitur Detail id: ${app.id}')" class="text-blue-600 hover:text-blue-900 bg-blue-50 px-3 py-1.5 rounded-lg mr-2">Detail</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    };
+
+    // Fungsi dummy untuk tombol tambah
+    window.openAddModal = function() {
+      alert("Modal Tambah Pelamar akan dibuka di sini.");
+    };
+  </script>
+</body>
+</html>
