@@ -96,15 +96,38 @@
         </div>
       </div>
 
-      <!-- Pencarian & Tombol Filter -->
-      <div class="p-4 bg-gray-50 border-b border-gray-200 flex gap-4 items-center">
-        <div class="relative w-96 shadow-sm flex-shrink-0">
+      <!-- Pencarian & Tombol Filter (DIREVISI) -->
+      <div class="p-4 bg-gray-50 border-b border-gray-200 flex gap-4 items-center flex-wrap">
+        <div class="relative w-72 lg:w-96 shadow-sm flex-shrink-0">
           <span class="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
           <input type="text" id="searchInput" onkeyup="renderTable()" placeholder="Cari Nama, Posisi..." class="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none bg-white" />
         </div>
-        <button onclick="toggleFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 border shadow-sm bg-white border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+        
+        <button onclick="toggleFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 border shadow-sm bg-white border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0">
           <span class="material-icons text-sm">filter_alt</span> Filter
         </button>
+
+        <!-- FITUR BARU: Dropdown Kelipatan -->
+        <div class="flex items-center gap-2 ml-2 flex-shrink-0">
+          <label class="text-sm font-medium text-gray-600 hidden sm:block">Tampilkan:</label>
+          <select id="limitSelect" onchange="renderTable()" class="py-2.5 px-3 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
+            <option value="25">25 Baris</option>
+            <option value="50">50 Baris</option>
+            <option value="75">75 Baris</option>
+            <option value="100">100 Baris</option>
+            <option value="all">Semua</option>
+          </select>
+        </div>
+
+        <!-- FITUR BARU: Filter Tanggal Input -->
+        <div class="ml-auto flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-600 hidden lg:flex items-center gap-1">
+            <span class="material-icons text-[16px]">calendar_today</span> Tgl Input:
+          </label>
+          <input type="date" id="startDate" onchange="renderTable()" class="py-2.5 px-3 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-blue-500 shadow-sm" title="Tanggal Awal">
+          <span class="text-gray-500">-</span>
+          <input type="date" id="endDate" onchange="renderTable()" class="py-2.5 px-3 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-blue-500 shadow-sm" title="Tanggal Akhir">
+        </div>
       </div>
 
       <!-- PANEL FILTER LENGKAP -->
@@ -202,7 +225,7 @@
     let selectedApplicantData = null;
     let tempFormData = {};
     let templatesWA = []; 
-    let locationsData = []; // VARIABEL BARU UNTUK MENAMPUNG LOKASI
+    let locationsData = []; 
 
     const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
 
@@ -239,21 +262,18 @@
       try {
         document.getElementById('loadingOverlay').style.display = 'flex'; 
         
-        // 1. Fetch Template WA
         try {
           const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
           templatesWA = [];
           templatesSnapshot.forEach(doc => templatesWA.push(doc.data()));
         } catch(e) {}
 
-        // 2. Fetch Master Lokasi
         try {
           const locationsSnapshot = await window.getDocs(window.collection(window.db, "locations"));
           locationsData = [];
           locationsSnapshot.forEach(doc => locationsData.push({ id: doc.id, ...doc.data() }));
         } catch(e) {}
 
-        // 3. Fetch Applicants
         const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
         applicants = [];
         applicantsSnapshot.forEach(doc => {
@@ -371,19 +391,34 @@
       return "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200"; 
     }
 
-    // FUNGSI BARU: Untuk mengecek apakah kandidat berhak masuk filter "Belum Diproses"
     function isEligibleForTahap(app, tahap) {
-      // Jika statusnya sudah diisi (tidak kuning), berarti SUDAH DIPROSES, jadi abaikan.
       if (!isKuning(getTriggerVal(app, tahap))) return false;
-
-      // Jika belum diisi, cek apakah dia LOLOS dari tahap sebelumnya
       if (tahap === 'HR') return true; 
       if (tahap === 'User') return getTriggerVal(app, 'HR') === 'Lolos';
       if (tahap === 'Direktur') return getTriggerVal(app, 'User') === 'Lolos';
       if (tahap === 'Offering') return getTriggerVal(app, 'Direktur') === 'Lolos';
       if (tahap === 'Onboarding') return getTriggerVal(app, 'Offering') === 'Diterima';
-      
       return false;
+    }
+
+    // FUNGSI BARU: Untuk mengubah format string text WAKTU_INPUT menjadi objek JS Date untuk perbandingan
+    function parseWaktuInput(dateStr) {
+      if (!dateStr) return null;
+      // Memecah "16 September 2026 - 14.24" -> "16 September 2026"
+      const dateOnlyStr = dateStr.split(' - ')[0]; 
+      if (!dateOnlyStr) return null;
+      
+      const parts = dateOnlyStr.split(' ');
+      if (parts.length !== 3) return null;
+      
+      const day = parseInt(parts[0]);
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      const month = monthNames.indexOf(parts[1]);
+      const year = parseInt(parts[2]);
+      
+      if (month === -1 || isNaN(day) || isNaN(year)) return null;
+      
+      return new Date(year, month, day);
     }
 
     window.renderTable = function() {
@@ -394,21 +429,54 @@
       const checkedPosisi = Array.from(document.querySelectorAll('.filter-posisi:checked')).map(cb => cb.value);
       const checkedEntitas = Array.from(document.querySelectorAll('.filter-entitas:checked')).map(cb => cb.value);
 
-      const filtered = applicants.filter(app => {
+      // Mengambil Nilai dari Filter Baru
+      const limitVal = document.getElementById('limitSelect').value;
+      const startVal = document.getElementById('startDate').value;
+      const endVal = document.getElementById('endDate').value;
+      
+      let startDate = startVal ? new Date(startVal) : null;
+      let endDate = endVal ? new Date(endVal) : null;
+      
+      if(startDate) startDate.setHours(0,0,0,0);
+      if(endDate) endDate.setHours(23,59,59,999);
+
+      let filtered = applicants.filter(app => {
         const matchSearch = !searchTerm || 
                (String(app.NAMA || '').toLowerCase().includes(searchTerm) || 
                 String(app.NOMOR_WA || '').includes(searchTerm) || 
                 String(app.POSISI || '').toLowerCase().includes(searchTerm));
                 
-        // MENGGUNAKAN FUNGSI LOGIKA BARU DI SINI
         const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.some(t => isEligibleForTahap(app, t));
-        
         const matchPlatform = checkedPlatform.length === 0 || checkedPlatform.includes(app.PLATFORM);
         const matchPosisi = checkedPosisi.length === 0 || checkedPosisi.includes(app.POSISI);
         const matchEntitas = checkedEntitas.length === 0 || checkedEntitas.includes(app.ENTITAS);
 
-        return matchSearch && matchTahapan && matchPlatform && matchPosisi && matchEntitas;
+        // Pengecekan Tanggal Input
+        let matchDate = true;
+        if (startDate || endDate) {
+          const appDate = parseWaktuInput(app.WAKTU_INPUT);
+          if (appDate) {
+            if (startDate && appDate < startDate) matchDate = false;
+            if (endDate && appDate > endDate) matchDate = false;
+          } else {
+            // Jika tanggal datanya kosong/error tapi filter sedang nyala, sembunyikan
+            matchDate = false; 
+          }
+        }
+
+        return matchSearch && matchTahapan && matchPlatform && matchPosisi && matchEntitas && matchDate;
       });
+
+      // Balik urutan agar data terbaru ada di atas
+      filtered = filtered.slice().reverse();
+
+      // Logika pemotongan berdasarkan Dropdown Limit Data
+      if (limitVal !== 'all') {
+        const limitNum = parseInt(limitVal, 10);
+        if (!isNaN(limitNum)) {
+          filtered = filtered.slice(0, limitNum);
+        }
+      }
 
       const tbody = document.getElementById('tableBody');
       if (filtered.length === 0) {
@@ -416,7 +484,7 @@
         return;
       }
 
-      tbody.innerHTML = filtered.slice().reverse().map(app => `
+      tbody.innerHTML = filtered.map(app => `
         <tr class="hover:bg-blue-50/40 transition-colors">
           <td class="py-3 px-4 text-gray-500 text-[11px] leading-tight">${app.WAKTU_INPUT || ''}</td>
           <td class="py-3 px-4 font-bold text-gray-800 text-sm whitespace-nowrap">${app.NAMA}</td>
@@ -488,7 +556,6 @@
       }
     };
 
-    // LOGIKA DINAMIS UNTUK METODE INTERVIEW ONLINE/OFFLINE
     window.handleMetodeChange = function() {
       const metode = document.getElementById('fm_metode').value;
       const containerOnline = document.getElementById('container_online');
@@ -806,7 +873,6 @@
       }
     };
 
-    // PENYIMPANAN SELURUH DATA TERMASUK METODE INTERVIEW
     window.simpanTahap = async function(type) {
       document.getElementById('loadingText').innerText = "Memperbarui Tahapan...";
       document.getElementById('loadingOverlay').style.display = 'flex'; 
@@ -864,7 +930,6 @@
       }
     };
 
-    // PENYIMPANAN SEMENTARA HANYA UNTUK TANGGAL, JAM, METODE
     window.simpanTanpaTutup = async function(type) {
       document.getElementById('loadingText').innerText = "Menyimpan Data Sementara...";
       document.getElementById('loadingOverlay').style.display = 'flex'; 
@@ -964,13 +1029,11 @@
           return tglAsli;
         };
 
-        // 1. DATA UMUM
         text = text.replace(/\[NAMA\]/gi, app.NAMA || '-');
         text = text.replace(/\[POSISI\]/gi, app.POSISI || '-');
         text = text.replace(/\[ENTITAS\]/gi, app.ENTITAS || '-');
         text = text.replace(/\[PLATFORM\]/gi, app.PLATFORM || '-');
 
-        // 2. DATA TAHAP HR
         text = text.replace(/\[JADWAL_INTERVIEW_HR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_HR));
         text = text.replace(/\[JAM_INTERVIEW_HR\]/gi, app.JAM_INTERVIEW_HR || '-');
         text = text.replace(/\[METODE_INTERVIEW_HR\]/gi, app.METODE_INTERVIEW_HR || '-');
@@ -978,7 +1041,6 @@
         text = text.replace(/\[TEMPAT_INTERVIEW_HR\]/gi, app.NAMA_LOKASI_HR || '-');
         text = text.replace(/\[GMAPS_INTERVIEW_HR\]/gi, app.GMAPS_HR || '-');
 
-        // 3. DATA TAHAP USER
         text = text.replace(/\[JADWAL_INTERVIEW_USER\]/gi, formatTanggal(app.JADWAL_INTERVIEW_USER));
         text = text.replace(/\[JAM_INTERVIEW_USER\]/gi, app.JAM_INTERVIEW_USER || '-');
         text = text.replace(/\[METODE_INTERVIEW_USER\]/gi, app.METODE_INTERVIEW_USER || '-');
@@ -986,7 +1048,6 @@
         text = text.replace(/\[TEMPAT_INTERVIEW_USER\]/gi, app.NAMA_LOKASI_USER || '-');
         text = text.replace(/\[GMAPS_INTERVIEW_USER\]/gi, app.GMAPS_USER || '-');
 
-        // 4. DATA TAHAP DIREKTUR
         text = text.replace(/\[JADWAL_INTERVIEW_DIREKTUR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_DIREKTUR));
         text = text.replace(/\[JAM_INTERVIEW_DIREKTUR\]/gi, app.JAM_INTERVIEW_DIREKTUR || '-');
         text = text.replace(/\[METODE_INTERVIEW_DIREKTUR\]/gi, app.METODE_INTERVIEW_DIREKTUR || '-');
@@ -994,7 +1055,6 @@
         text = text.replace(/\[TEMPAT_INTERVIEW_DIREKTUR\]/gi, app.NAMA_LOKASI_DIREKTUR || '-');
         text = text.replace(/\[GMAPS_INTERVIEW_DIREKTUR\]/gi, app.GMAPS_DIREKTUR || '-');
 
-        // 5. LAINNYA
         text = text.replace(/\[TANGGAL_OFFERING\]/gi, formatTanggal(app.TANGGAL_OFFERING_LETTER));
         text = text.replace(/\[DEADLINE_OFFERING\]/gi, formatTanggal(app.DEADLINE_OFFERING_LETTER));
         text = text.replace(/\[TANGGAL_ONBOARDING\]/gi, formatTanggal(app.TANGGAL_ONBOARDING));
