@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- Tailwind CSS & Google Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    .nav-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: #4b5563; text-decoration: none; transition: 0.2s; }
+    .nav-btn:hover { background-color: #eff6ff; color: #2563eb; }
+    .nav-btn.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800">
+
+  
+
+  <!-- OVERLAY LOADING BIASA -->
+  <div id="loadingOverlay" style="display: none;" class="fixed inset-0 bg-gray-800/40 z-[999] flex flex-col items-center justify-center backdrop-blur-sm">
+    <div class="bg-white/95 px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center border border-gray-200/50">
+      <span class="material-icons animate-spin text-blue-600 text-5xl mb-3">autorenew</span>
+      <p class="font-bold text-lg text-gray-800" id="loadingText">Memproses Kalender...</p>
+    </div>
+  </div>
+
+  <!-- SIDEBAR DINAMIS -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0">
+    <div class="p-6 border-b border-gray-200 flex flex-col items-start overflow-hidden">
+      <img src="https://drive.google.com/thumbnail?id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF&sz=w800" alt="Logo" class="h-10 w-auto object-contain mb-3">
+      <h1 class="text-[13px] font-bold text-blue-700 leading-tight whitespace-nowrap uppercase tracking-tight">
+        APPLICANT TRACKING SYSTEM
+      </h1>
+      <p class="text-[11px] font-semibold text-gray-600 mt-0.5 whitespace-nowrap">
+        PT Dimensi Jaringan Bersinar
+      </p>
+    </div>
+    <div class="flex-1 p-4 space-y-2">
+      <a href="index.html" class="nav-btn"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
+      <a href="calendar.html" class="nav-btn active"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
+      <a href="analytics.html" class="nav-btn"><span class="material-icons">analytics</span> Analytics</a>
+    </div>
+    <!-- TOMBOL LOGOUT -->
+    <div class="p-4 border-t border-gray-200">
+      <button onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold transition-colors border border-red-100 shadow-sm">
+        <span class="material-icons text-[18px]">logout</span> Keluar (Logout)
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN KALENDER -->
+  <main class="flex-1 overflow-auto p-6 relative bg-gray-50">
+    <div class="max-w-[1500px] mx-auto bg-white rounded-xl shadow-md border border-gray-200 flex flex-col min-h-[85vh]">
+      
+      <!-- Header Kalender & Toolbar -->
+      <div class="p-6 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-xl">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Jadwal Interview & Proses</h1>
+          <p class="text-sm text-gray-500 mt-1">Kalender Keseluruhan Tahapan Seleksi</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="relative w-56 shadow-sm">
+            <span class="material-icons absolute left-3 top-2.5 text-gray-400 text-[18px]">search</span>
+            <input type="text" id="searchCalendar" onkeyup="renderCalendar()" placeholder="Cari Nama..." class="pl-9 pr-3 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none bg-white" />
+          </div>
+          <button onclick="toggleFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 border shadow-sm bg-white border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+            <span class="material-icons text-sm">filter_alt</span> Filter
+          </button>
+          <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 shadow-sm">
+            <button onclick="changeMonth(-1)" class="p-1 hover:bg-white rounded border border-transparent hover:border-gray-300 transition-colors"><span class="material-icons">chevron_left</span></button>
+            <h2 id="calendarMonthYear" class="text-base font-bold text-gray-700 min-w-[140px] text-center">Bulan Tahun</h2>
+            <button onclick="changeMonth(1)" class="p-1 hover:bg-white rounded border border-transparent hover:border-gray-300 transition-colors"><span class="material-icons">chevron_right</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL FILTER LENGKAP -->
+      <div id="filterContainer" class="p-5 bg-white border-b border-gray-200 shadow-inner hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Tahapan Event</h3>
+            <div class="space-y-2 mt-2" id="filterTahapan"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Posisi Kandidat</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterPosisi"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Entitas</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterEntitas"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legenda Warna -->
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-6 text-xs font-semibold text-gray-600">
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-blue-400 shadow-sm"></span> HR</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-purple-400 shadow-sm"></span> User</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-orange-400 shadow-sm"></span> Direktur</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm"></span> Offering</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-sm"></span> Onboarding</div>
+      </div>
+
+      <!-- Area Grid Kalender -->
+      <div class="flex-1 p-6 bg-white overflow-hidden flex flex-col">
+        <div class="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-xl overflow-hidden h-full shadow-sm" id="calendarGrid"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="modalContainer"></div>
+
+  <!-- SCRIPT FIREBASE HYBRID + AUTH -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
+      authDomain: "recruitmentupaznetats.firebaseapp.com",
+      projectId: "recruitmentupaznetats",
+      storageBucket: "recruitmentupaznetats.firebasestorage.app",
+      messagingSenderId: "907827986807",
+      appId: "1:907827986807:web:06a60cb242d1b2bac16172"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.collection = collection;
+    window.getDocs = getDocs;
+    window.doc = doc;
+    window.updateDoc = updateDoc;
+
+    const auth = getAuth(app);
+    window.auth = auth;
+    window.signOut = signOut;
+
+    // PENJAGA PINTU (AUTH CHECKER)
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.initApp(); // Cukup jalankan aplikasi langsung
+  } else {
+    // Jika belum login, langsung tendang balik ke index.html
+    window.location.href = 'index.html';
+  }
+});
+  </script>
+
+  <script>
+    let applicants = [];
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let selectedApplicantData = null;
+    let tempFormData = {};
+
+    // 2. MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+    const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
+
+    window.logoutApp = async function() {
+      if (confirm("Yakin ingin keluar dari sistem?")) {
+        await window.signOut(window.auth);
+      }
+    }
+
+    window.initApp = async function() {
+      try {
+        const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        applicants = [];
+        applicantsSnapshot.forEach(doc => {
+          applicants.push({ id: doc.id, ...doc.data() });
+        });
+
+        renderFilterOptions(); 
+        renderCalendar();
+      } catch (err) {
+        console.error("Gagal memuat data:", err);
+      }
+    };
+
+    async function uploadFileToDriveGAS(base64Data, fileName) {
+      try {
+        const response = await fetch(GAS_UPLOAD_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ file: base64Data, name: fileName })
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+          return result.url;
+        } else {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        alert("Gagal mengupload file ke Drive: " + err.message);
+        return null;
+      }
+    }
+
+    window.toggleFilters = function() {
+      document.getElementById('filterContainer').classList.toggle('hidden');
+    }
+
+    window.renderFilterOptions = function() {
+      const tahapan = ['HR', 'User', 'Direktur', 'Offering', 'Onboarding'];
+      document.getElementById('filterTahapan').innerHTML = tahapan.map(t => `
+        <label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
+          <input type="checkbox" value="${t}" class="filter-tahapan w-4 h-4 rounded text-blue-600" onchange="renderCalendar()" /> ${t}
+        </label>
+      `).join('');
+
+      const posisis = [...new Set(applicants.map(a => a.POSISI).filter(Boolean))].sort();
+      const entitas = [...new Set(applicants.map(a => a.ENTITAS).filter(Boolean))].sort();
+
+      const createCheckboxes = (items, className) => items.map(item => `
+        <label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
+          <input type="checkbox" value="${item}" class="${className} w-4 h-4 rounded" onchange="renderCalendar()" /> ${item}
+        </label>
+      `).join('');
+
+      document.getElementById('filterPosisi').innerHTML = createCheckboxes(posisis, 'filter-posisi');
+      document.getElementById('filterEntitas').innerHTML = createCheckboxes(entitas, 'filter-entitas');
+    }
+
+    window.changeMonth = function(dir) {
+      currentMonth += dir;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; } 
+      else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      renderCalendar();
+    }
+
+    window.renderCalendar = function() {
+      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      document.getElementById('calendarMonthYear').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+      
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      
+      const checkedTahapan = Array.from(document.querySelectorAll('.filter-tahapan:checked')).map(cb => cb.value);
+      const checkedPosisi = Array.from(document.querySelectorAll('.filter-posisi:checked')).map(cb => cb.value);
+      const checkedEntitas = Array.from(document.querySelectorAll('.filter-entitas:checked')).map(cb => cb.value);
+      const searchTerm = document.getElementById('searchCalendar') ? document.getElementById('searchCalendar').value.toLowerCase() : '';
+
+      const filteredApplicants = applicants.filter(app => {
+        const matchPosisi = checkedPosisi.length === 0 || checkedPosisi.includes(app.POSISI);
+        const matchEntitas = checkedEntitas.length === 0 || checkedEntitas.includes(app.ENTITAS);
+        const matchSearch = !searchTerm || (app.NAMA && app.NAMA.toLowerCase().includes(searchTerm));
+        
+        return matchPosisi && matchEntitas && matchSearch;
+      });
+
+      let html = '';
+      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      
+      days.forEach(d => {
+        html += `<div class="bg-gray-50 py-3 text-center text-sm font-bold text-gray-700 border-b border-gray-200">${d}</div>`;
+      });
+      
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="bg-gray-50/50 min-h-[120px] p-2 border-b border-r border-gray-200 opacity-50"></div>`;
+      }
+      
+      for (let i = 1; i <= daysInMonth; i++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        
+        let eventsHtml = '';
+        filteredApplicants.forEach(app => {
+          const evts = [
+            { d: app.JADWAL_INTERVIEW_HR, t: app.JAM_INTERVIEW_HR, title: `HR: ${app.NAMA}${app.METODE_INTERVIEW_HR ? ` (${app.METODE_INTERVIEW_HR})` : ''}`, type: 'HR', c: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100' },
+            { d: app.JADWAL_INTERVIEW_USER, t: app.JAM_INTERVIEW_USER, title: `User: ${app.NAMA}${app.METODE_INTERVIEW_USER ? ` (${app.METODE_INTERVIEW_USER})` : ''}`, type: 'User', c: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' },
+            { d: app.JADWAL_INTERVIEW_DIREKTUR, t: app.JAM_INTERVIEW_DIREKTUR, title: `Dir: ${app.NAMA}${app.METODE_INTERVIEW_DIREKTUR ? ` (${app.METODE_INTERVIEW_DIREKTUR})` : ''}`, type: 'Direktur', c: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100' },
+            { d: app.TANGGAL_OFFERING_LETTER, t: '-', title: `Offering: ${app.NAMA}`, type: 'Offering', c: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
+            { d: app.DEADLINE_OFFERING_LETTER, t: '-', title: `Deadline OL: ${app.NAMA}`, type: 'Offering', c: 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100' },
+            { d: app.TANGGAL_ONBOARDING, t: '-', title: `Onboard: ${app.NAMA}`, type: 'Onboarding', c: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' }
+          ];
+          
+          evts.forEach(e => {
+            const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.includes(e.type);
+            
+            if (matchTahapan && e.d && (e.d === dateStr || e.d.includes(dateStr))) {
+              const timeStr = e.t !== '-' && e.t ? e.t : 'Menunggu';
+              const posStr = app.POSISI || '-';
+              const entStr = app.ENTITAS || '-';
+              
+              eventsHtml += `
+                <div onclick="openModal('${e.type}', '${app.id}')" class="text-[10px] p-1.5 rounded-md border shadow-sm cursor-pointer flex flex-col gap-0.5 mb-1.5 transition-colors ${e.c}">
+                  <div class="font-bold truncate text-[11px]">${e.title}</div>
+                  <div class="flex items-start gap-1 opacity-90 font-medium">
+                    <span class="material-icons text-[11px] mt-[1px]">schedule</span> 
+                    <span class="leading-tight line-clamp-2">${timeStr} - ${posStr} - ${entStr}</span>
+                  </div>
+                </div>
+              `;
+            }
+          });
+        });
+
+        const isToday = new Date().toDateString() === new Date(currentYear, currentMonth, i).toDateString();
+        const cellClass = isToday ? 'bg-blue-50/30' : 'bg-white';
+        const dateTextClass = isToday ? 'text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full inline-block' : 'text-gray-500';
+        
+        html += `
+          <div class="min-h-[120px] p-2 hover:bg-gray-50 transition-colors border-b border-r border-gray-200 flex flex-col ${cellClass}">
+            <div class="text-xs font-bold text-right mb-2">
+              <span class="${dateTextClass}">${i}</span>
+            </div>
+            <div class="flex flex-col flex-1 overflow-y-auto max-h-[140px] hide-scrollbar">
+              ${eventsHtml}
+            </div>
+          </div>
+        `;
+      }
+      
+      document.getElementById('calendarGrid').innerHTML = html;
+    }
+
+    window.openModal = function(type, appId = null) {
+      tempFormData = {};
+      let title = '', bodyHtml = '', saveFn = '', subHeader = '';
+      
+      title = `Update Tahapan: ${type}`;
+      saveFn = `simpanTahap('${type}')`;
+      selectedApplicantData = applicants.find(a => a.id === appId);
+      const a = selectedApplicantData;
+      
+      subHeader = `
+        <div class="flex flex-wrap items-center gap-2 text-xs mt-3 bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm w-full">
+          <span class="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded border border-blue-100">${a.NAMA}</span>
+          <span class="text-gray-300">|</span>
+          <span class="font-medium flex items-center gap-1 text-gray-600"><span class="material-icons text-[12px]">work</span> ${a.POSISI}</span>
+          <span class="text-gray-300">|</span>
+          <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">${a.ENTITAS}</span>
+          <span class="text-gray-300">|</span>
+          <span class="font-mono text-gray-500">${a.id}</span>
+        </div>
+      `;
+      
+      if (['HR', 'User', 'Direktur'].includes(type)) {
+        const t = type.toUpperCase();
+        bodyHtml = `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jadwal Interview ${type}</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JADWAL_INTERVIEW_'+t]||''}"></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jam Interview</label><input type="time" id="fm_jam" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JAM_INTERVIEW_'+t]||''}"></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label><select id="fm_metode" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option><option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option></select></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kesediaan Hadir</label><select id="fm_sedia" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Bersedia'?'selected':''}>Bersedia</option><option value="Tidak Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Bersedia'?'selected':''}>Tidak Bersedia</option><option value="Tidak Merespon" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Merespon'?'selected':''}>Tidak Merespon</option></select></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kehadiran Aktual</label><select id="fm_hadir" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Hadir'?'selected':''}>Hadir</option><option value="Tidak Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Tidak Hadir'?'selected':''}>Tidak Hadir</option></select></div>
+            
+            ${type === 'HR' ? `
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Psikotest HR</label><select id="fm_psikotest" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Dominan" ${a.PSIKOTEST_HR==='Dominan'?'selected':''}>Dominan</option><option value="Influence" ${a.PSIKOTEST_HR==='Influence'?'selected':''}>Influence</option><option value="Steadiness" ${a.PSIKOTEST_HR==='Steadiness'?'selected':''}>Steadiness</option><option value="Compliance" ${a.PSIKOTEST_HR==='Compliance'?'selected':''}>Compliance</option></select></div>
+              <div class="space-y-1.5 md:col-span-2"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">URL Form Pelamar (G-Drive)</label><input type="url" id="fm_url" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" placeholder="http://..." value="${a.FORM_PELAMAR_HR||''}"></div>
+            ` : ''}
+
+            <div class="space-y-1.5 md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+              <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Status Interview ${type} (Trigger Warna)</label>
+              <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                <option value="">-- Tentukan Status --</option>
+                <option value="Lolos" ${a['STATUS_INTERVIEW_'+t] === 'Lolos' ? 'selected':''}>Lolos</option>
+                <option value="Tidak Lolos" ${a['STATUS_INTERVIEW_'+t] === 'Tidak Lolos' ? 'selected':''}>Tidak Lolos</option>
+              </select>
+            </div>
+            <div class="space-y-1.5 md:col-span-2">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Keterangan / Catatan</label>
+              <textarea id="fm_ket" rows="2" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none">${a['KETERANGAN_INTERVIEW_'+t]||''}</textarea>
+            </div>
+          </div>
+        `;
+      } else if (type === 'Offering') {
+          bodyHtml = `
+            <div class="grid grid-cols-1 gap-5 mt-2">
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Offering</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_OFFERING_LETTER||''}"></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload File Offering</label><input type="file" onchange="handleFile(this, 'OFFERING')" class="w-full p-1.5 border border-gray-300 rounded-lg bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx"></div>
+              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Deadline Offering Letter</label><input type="date" id="fm_deadline_offering" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.DEADLINE_OFFERING_LETTER||''}"></div>
+              <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+              <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Respon Kandidat (Trigger Warna)</label>
+              <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                <option value="">-- Pilih --</option>
+                <option value="Diterima" ${a.KESEDIAAN_OFFERING_LETTER === 'Diterima' ? 'selected':''}>Diterima</option>
+                <option value="Ditolak" ${a.KESEDIAAN_OFFERING_LETTER === 'Ditolak' ? 'selected':''}>Ditolak</option>
+              </select>
+            </div>
+          </div>
+        `;
+      } else if (type === 'Onboarding') {
+        bodyHtml = `
+          <div class="grid grid-cols-1 gap-5 mt-2">
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Onboarding</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_ONBOARDING||''}"></div>
+            <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+              <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Kehadiran (Trigger Warna)</label>
+              <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
+                <option value="">-- Pilih --</option>
+                <option value="Hadir" ${a.KEHADIRAN_ONBOARDING === 'Hadir' ? 'selected':''}>Hadir</option>
+                <option value="Tidak Hadir" ${a.KEHADIRAN_ONBOARDING === 'Tidak Hadir' ? 'selected':''}>Tidak Hadir</option>
+              </select>
+            </div>
+          </div>
+        `;
+      }
+      
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="fixed inset-0 bg-gray-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border border-gray-200">
+            <div class="px-6 py-4 bg-gray-50 border-b flex flex-col items-start w-full">
+              <div class="flex justify-between items-center w-full">
+                 <h2 class="text-xl font-bold text-gray-800">${title}</h2>
+                 <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-gray-200"><span class="material-icons text-[20px]">close</span></button>
+              </div>
+              ${subHeader}
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 bg-white">${bodyHtml}</div>
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3 rounded-b-xl">
+              <button onclick="closeModal()" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 shadow-sm">Batal</button>
+              <button onclick="${saveFn}" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2">
+                <span class="material-icons text-[16px]">check_circle</span> Simpan Data
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    window.closeModal = function() { document.getElementById('modalContainer').innerHTML = ''; }
+
+    window.handleFile = function(el, targetField) {
+      const f = el.files[0];
+      if (f) {
+        const r = new FileReader();
+        r.onload = e => { tempFormData[`${targetField}_BASE64`] = e.target.result; tempFormData[`${targetField}_NAME`] = f.name; };
+        r.readAsDataURL(f);
+      }
+    }
+
+    window.simpanTahap = async function(type) {
+      document.getElementById('loadingText').innerText = "Memperbarui Tahapan...";
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+      
+      try {
+        const payload = {}; const t = type.toUpperCase();
+
+        if (['HR', 'User', 'Direktur'].includes(type)) {
+          payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
+          payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
+          payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
+          payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
+          payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
+          payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
+          if (type === 'HR') {
+            payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
+            payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
+          }
+        } else if (type === 'Offering') {
+          payload.TANGGAL_OFFERING_LETTER = document.getElementById('fm_jadwal').value;
+          payload.DEADLINE_OFFERING_LETTER = document.getElementById('fm_deadline_offering').value;
+          payload.KESEDIAAN_OFFERING_LETTER = document.getElementById('fm_status').value;
+          
+          if(tempFormData.OFFERING_BASE64) {
+            const ekstensi = tempFormData.OFFERING_NAME.split('.').pop();
+            const namaBaru = `Offering - ${selectedApplicantData.id} - ${selectedApplicantData.NAMA}.${ekstensi}`;
+            const driveUrl = await uploadFileToDriveGAS(tempFormData.OFFERING_BASE64, namaBaru);
+            if (driveUrl) payload.OFFERING_FILE = driveUrl;
+          }
+        } else if (type === 'Onboarding') {
+          payload.TANGGAL_ONBOARDING = document.getElementById('fm_jadwal').value;
+          payload.KEHADIRAN_ONBOARDING = document.getElementById('fm_status').value;
+        }
+
+        closeModal(); 
+        await window.updateDoc(window.doc(window.db, "applicants", selectedApplicantData.id), payload);
+        await window.initApp(); 
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none';
+      }
+    }
+  </script>
+</body>
+</html>

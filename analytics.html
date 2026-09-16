@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <!-- Tailwind CSS & Google Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    
+    .nav-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 600; color: #4b5563; text-decoration: none; transition: 0.2s; }
+    .nav-btn:hover { background-color: #eff6ff; color: #2563eb; }
+    .nav-btn.active { background-color: #2563eb; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  </style>
+</head>
+<body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800">
+
+
+
+  <!-- OVERLAY LOADING BIASA -->
+  <div id="loadingOverlay" style="display: none;" class="fixed inset-0 bg-gray-900/50 z-[999] flex flex-col items-center justify-center backdrop-blur-sm">
+    <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center border border-gray-200">
+      <span class="material-icons animate-spin text-blue-600 text-5xl mb-3">autorenew</span>
+      <p class="font-bold text-lg text-gray-800" id="loadingText">Menarik Data Analytics...</p>
+    </div>
+  </div>
+
+  <!-- SIDEBAR DINAMIS -->
+  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm flex-shrink-0">
+    <div class="p-6 border-b border-gray-200 flex flex-col items-start overflow-hidden">
+      <img src="https://drive.google.com/thumbnail?id=1vR5j0wMWV8JEW8ihkQh0zlnn0WQkjrYF&sz=w800" alt="Logo" class="h-10 w-auto object-contain mb-3">
+      <h1 class="text-[13px] font-bold text-blue-700 leading-tight whitespace-nowrap uppercase tracking-tight">
+        APPLICANT TRACKING SYSTEM
+      </h1>
+      <p class="text-[11px] font-semibold text-gray-600 mt-0.5 whitespace-nowrap">
+        PT Dimensi Jaringan Bersinar
+      </p>
+    </div>
+    <div class="flex-1 p-4 space-y-2">
+      <a href="index.html" class="nav-btn"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
+      <a href="calendar.html" class="nav-btn"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
+      <a href="analytics.html" class="nav-btn active"><span class="material-icons">analytics</span> Recruitment Analytics</a>
+    </div>
+    <!-- TOMBOL LOGOUT -->
+    <div class="p-4 border-t border-gray-200">
+      <button onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold transition-colors border border-red-100 shadow-sm">
+        <span class="material-icons text-[18px]">logout</span> Keluar (Logout)
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN ANALYTICS -->
+  <main class="flex-1 overflow-auto p-6 relative bg-gray-50">
+    <div class="max-w-[1500px] mx-auto flex flex-col gap-6 pb-10">
+      
+      <!-- HEADER & TOMBOL FILTER -->
+      <div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800">Recruitment Analytics</h1>
+          <p class="text-sm text-gray-500 mt-1">Insight dan metrik performa rekrutmen</p>
+        </div>
+        <button onclick="toggleFilters()" class="px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 border shadow-sm bg-white border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
+          <span class="material-icons text-sm">filter_alt</span> Filter Analisis
+        </button>
+      </div>
+
+      <!-- PANEL FILTER CHECKLIST -->
+      <div id="filterContainer" class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Platform</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterPlatform"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Posisi</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterPosisi"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Entitas</h3>
+            <div class="max-h-32 overflow-y-auto space-y-2 pr-2 mt-2 hide-scrollbar" id="filterEntitas"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100"><span class="material-icons">group</span></div>
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Kandidat</p>
+            <h3 class="text-2xl font-bold text-gray-800 mt-1" id="kpiTotal">0</h3>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100"><span class="material-icons">how_to_reg</span></div>
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lolos Tahap Awal (HR)</p>
+            <h3 class="text-2xl font-bold text-gray-800 mt-1" id="kpiLolosHR">0</h3>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100"><span class="material-icons">badge</span></div>
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Berhasil Onboarding</p>
+            <h3 class="text-2xl font-bold text-gray-800 mt-1" id="kpiOnboard">0</h3>
+          </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+          <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center border border-amber-100"><span class="material-icons">trending_up</span></div>
+          <div>
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hiring Success Rate</p>
+            <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpiRate">0.0%</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN DATA GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+          <h2 class="text-lg font-bold text-gray-800 mb-6 border-b border-gray-100 pb-3">Recruitment Funnel</h2>
+          <div class="flex-1 flex flex-col justify-between py-2 space-y-4" id="funnelContainer"></div>
+        </div>
+        <div class="space-y-6">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-md font-bold text-gray-800 mb-5 border-b border-gray-100 pb-2">Sumber Platform Teratas</h2>
+            <div class="space-y-4" id="platformContainer"></div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 class="text-md font-bold text-gray-800 mb-5 border-b border-gray-100 pb-2">Posisi Paling Diminati</h2>
+            <div class="space-y-4" id="posisiContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- CONTAINER MODAL UNTUK KLIK FUNNEL -->
+  <div id="modalContainer"></div>
+
+  <!-- SCRIPT FIREBASE HYBRID + AUTH -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
+      authDomain: "recruitmentupaznetats.firebaseapp.com",
+      projectId: "recruitmentupaznetats",
+      storageBucket: "recruitmentupaznetats.firebasestorage.app",
+      messagingSenderId: "907827986807",
+      appId: "1:907827986807:web:06a60cb242d1b2bac16172"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.collection = collection;
+    window.getDocs = getDocs;
+
+    const auth = getAuth(app);
+    window.auth = auth;
+    window.signOut = signOut;
+
+    // PENJAGA PINTU (AUTH CHECKER)
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    window.initApp(); // Cukup jalankan aplikasi langsung
+  } else {
+    // Jika belum login, langsung tendang balik ke index.html
+    window.location.href = 'index.html';
+  }
+});
+  </script>
+
+  <!-- JAVASCRIPT LOGIC Analytics -->
+  <script>
+    var applicants = [];
+
+    window.logoutApp = async function() {
+      if (confirm("Yakin ingin keluar dari sistem?")) {
+        await window.signOut(window.auth);
+      }
+    }
+
+    window.initApp = async function() {
+      try {
+        const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
+        applicants = [];
+        applicantsSnapshot.forEach(doc => {
+          applicants.push({ id: doc.id, ...doc.data() });
+        });
+
+        renderFilterOptions();
+        renderSemua();
+      } catch (err) {
+        console.error("Gagal memuat data analytics: ", err);
+      }
+    };
+
+    window.toggleFilters = function() {
+      document.getElementById('filterContainer').classList.toggle('hidden');
+    };
+
+    window.renderFilterOptions = function() {
+      var platforms = [], posisis = [], entitas = [];
+      
+      for(var i=0; i<applicants.length; i++) {
+        var a = applicants[i];
+        if (a.PLATFORM && platforms.indexOf(a.PLATFORM) === -1) platforms.push(a.PLATFORM);
+        if (a.POSISI && posisis.indexOf(a.POSISI) === -1) posisis.push(a.POSISI);
+        if (a.ENTITAS && entitas.indexOf(a.ENTITAS) === -1) entitas.push(a.ENTITAS);
+      }
+      platforms.sort(); posisis.sort(); entitas.sort();
+
+      function buatCheckbox(list, className) {
+        var html = '';
+        for(var j=0; j<list.length; j++) {
+          html += '<label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">' +
+            '<input type="checkbox" value="' + list[j] + '" class="' + className + ' w-4 h-4 rounded" onchange="renderSemua()" /> ' + list[j] +
+          '</label>';
+        }
+        return html;
+      }
+
+      document.getElementById('filterPlatform').innerHTML = buatCheckbox(platforms, 'filter-platform');
+      document.getElementById('filterPosisi').innerHTML = buatCheckbox(posisis, 'filter-posisi');
+      document.getElementById('filterEntitas').innerHTML = buatCheckbox(entitas, 'filter-entitas');
+    }
+
+    window.renderSemua = function() {
+      var checkedPlatform = [];
+      var pCb = document.querySelectorAll('.filter-platform:checked');
+      for(var i=0; i<pCb.length; i++) checkedPlatform.push(pCb[i].value);
+
+      var checkedPosisi = [];
+      var posCb = document.querySelectorAll('.filter-posisi:checked');
+      for(var j=0; j<posCb.length; j++) checkedPosisi.push(posCb[j].value);
+
+      var checkedEntitas = [];
+      var eCb = document.querySelectorAll('.filter-entitas:checked');
+      for(var k=0; k<eCb.length; k++) checkedEntitas.push(eCb[k].value);
+
+      var filtered = applicants.filter(function(app) {
+        var matchPlatform = checkedPlatform.length === 0 || checkedPlatform.indexOf(app.PLATFORM) > -1;
+        var matchPosisi = checkedPosisi.length === 0 || checkedPosisi.indexOf(app.POSISI) > -1;
+        var matchEntitas = checkedEntitas.length === 0 || checkedEntitas.indexOf(app.ENTITAS) > -1;
+        return matchPlatform && matchPosisi && matchEntitas;
+      });
+
+      var total = filtered.length;
+      var lolosHR = 0, lolosUser = 0, lolosDir = 0, terimaOff = 0, onboard = 0;
+
+      for(var n=0; n<filtered.length; n++) {
+        var a = filtered[n];
+        if (a.STATUS_INTERVIEW_HR === 'Lolos') lolosHR++;
+        if (a.STATUS_INTERVIEW_USER === 'Lolos') lolosUser++;
+        if (a.STATUS_INTERVIEW_DIREKTUR === 'Lolos') lolosDir++;
+        if (a.KESEDIAAN_OFFERING_LETTER === 'Diterima') terimaOff++;
+        if (a.KEHADIRAN_ONBOARDING === 'Hadir') onboard++;
+      }
+
+      document.getElementById('kpiTotal').innerText = total;
+      document.getElementById('kpiLolosHR').innerText = lolosHR;
+      document.getElementById('kpiOnboard').innerText = onboard;
+      document.getElementById('kpiRate').innerText = total > 0 ? (onboard / total * 100).toFixed(1) + '%' : '0.0%';
+
+      function getPr(v) { return total > 0 ? Math.round((v / total) * 100) : 0; }
+      
+      var fData = [
+        { lbl: 'Total Aplikan', v: total, pr: getPr(total), c: 'bg-gray-400' },
+        { lbl: 'Lolos HR', v: lolosHR, pr: getPr(lolosHR), c: 'bg-blue-400' },
+        { lbl: 'Lolos User', v: lolosUser, pr: getPr(lolosUser), c: 'bg-purple-400' },
+        { lbl: 'Lolos Direktur', v: lolosDir, pr: getPr(lolosDir), c: 'bg-orange-400' },
+        { lbl: 'Terima Offering', v: terimaOff, pr: getPr(terimaOff), c: 'bg-amber-400' },
+        { lbl: 'Onboarding (Hired)', v: onboard, pr: getPr(onboard), c: 'bg-emerald-400' }
+      ];
+
+      var funnelHtml = '';
+      for(var m=0; m<fData.length; m++) {
+        var d = fData[m];
+        funnelHtml += '<div class="cursor-pointer group hover:bg-blue-50/50 hover:shadow-sm p-3 -m-3 rounded-xl transition-all border border-transparent hover:border-blue-100" onclick="bukaModalTahap(\'' + d.lbl + '\')" title="Klik untuk daftar kandidat">' +
+          '<div class="flex justify-between items-end mb-2">' +
+            '<span class="text-sm font-semibold text-gray-700 group-hover:text-blue-700">' + d.lbl + '</span>' +
+            '<span class="text-sm font-bold text-gray-800">' + d.v + ' <span class="text-gray-400 font-normal text-xs ml-1">(' + d.pr + '%)</span></span>' +
+          '</div>' +
+          '<div class="w-full bg-gray-100 rounded-full h-3">' +
+            '<div class="' + d.c + ' h-3 rounded-full transition-all duration-1000" style="width: ' + d.pr + '%"></div>' +
+          '</div>' +
+        '</div>';
+      }
+      document.getElementById('funnelContainer').innerHTML = funnelHtml;
+
+      window.renderTop('PLATFORM', 'platformContainer', filtered);
+      window.renderTop('POSISI', 'posisiContainer', filtered);
+    };
+
+    window.renderTop = function(kunci, idWadah, dataFilter) {
+      var hitung = {};
+      for(var i=0; i<dataFilter.length; i++) {
+        var val = dataFilter[i][kunci];
+        if (val) {
+          if(!hitung[val]) hitung[val] = 0;
+          hitung[val]++;
+        }
+      }
+
+      var arraySort = [];
+      for (var k in hitung) { arraySort.push([k, hitung[k]]); }
+      arraySort.sort(function(a, b) { return b[1] - a[1]; });
+      var top4 = arraySort.slice(0, 4);
+
+      var wadah = document.getElementById(idWadah);
+      if (top4.length === 0) {
+        wadah.innerHTML = '<p class="text-sm text-gray-400">Tidak ada data.</p>';
+        return;
+      }
+
+      var maxVal = top4[0][1];
+      var html = '';
+      for(var j=0; j<top4.length; j++) {
+        var item = top4[j];
+        var persen = Math.round((item[1] / maxVal) * 100);
+        html += '<div>' +
+          '<div class="flex justify-between items-center mb-1.5">' +
+            '<div class="text-sm font-medium text-gray-700 flex items-center gap-2">' +
+              '<span class="text-[11px] font-bold text-gray-400 w-4">#' + (j + 1) + '</span>' + 
+              '<span class="truncate max-w-[150px]">' + item[0] + '</span>' +
+            '</div>' +
+            '<div class="text-sm font-bold text-gray-800">' + item[1] + '</div>' +
+          '</div>' +
+          '<div class="w-full bg-gray-50 rounded-full h-1.5"><div class="bg-blue-500 h-1.5 rounded-full" style="width: ' + persen + '%"></div></div>' +
+        '</div>';
+      }
+      wadah.innerHTML = html;
+    }
+
+    window.bukaModalTahap = function(namaTahap) {
+      var checkedPlatform = [];
+      var pCb = document.querySelectorAll('.filter-platform:checked');
+      for(var i=0; i<pCb.length; i++) checkedPlatform.push(pCb[i].value);
+
+      var checkedPosisi = [];
+      var posCb = document.querySelectorAll('.filter-posisi:checked');
+      for(var j=0; j<posCb.length; j++) checkedPosisi.push(posCb[j].value);
+
+      var checkedEntitas = [];
+      var eCb = document.querySelectorAll('.filter-entitas:checked');
+      for(var k=0; k<eCb.length; k++) checkedEntitas.push(eCb[k].value);
+
+      var saring = applicants.filter(function(app) {
+        var matchPlatform = checkedPlatform.length === 0 || checkedPlatform.indexOf(app.PLATFORM) > -1;
+        var matchPosisi = checkedPosisi.length === 0 || checkedPosisi.indexOf(app.POSISI) > -1;
+        var matchEntitas = checkedEntitas.length === 0 || checkedEntitas.indexOf(app.ENTITAS) > -1;
+        
+        if (!(matchPlatform && matchPosisi && matchEntitas)) return false;
+
+        if (namaTahap === 'Lolos HR') return app.STATUS_INTERVIEW_HR === 'Lolos';
+        if (namaTahap === 'Lolos User') return app.STATUS_INTERVIEW_USER === 'Lolos';
+        if (namaTahap === 'Lolos Direktur') return app.STATUS_INTERVIEW_DIREKTUR === 'Lolos';
+        if (namaTahap === 'Terima Offering') return app.KESEDIAAN_OFFERING_LETTER === 'Diterima';
+        if (namaTahap === 'Onboarding (Hired)') return app.KEHADIRAN_ONBOARDING === 'Hadir';
+        return true; 
+      });
+
+      var barisTabel = '';
+      if (saring.length > 0) {
+        for(var n=0; n<saring.length; n++) {
+          var app = saring[n];
+          var ent = app.ENTITAS || '-';
+          var plat = app.PLATFORM || '-';
+          var pos = app.POSISI || '-';
+          var nama = app.NAMA || '-';
+          
+          barisTabel += '<tr class="border-b border-gray-100 hover:bg-gray-50">' +
+            '<td class="py-3 px-6 text-sm font-bold text-gray-800">' + nama + '</td>' +
+            '<td class="py-3 px-6 text-sm text-gray-600">' + pos + '</td>' +
+            '<td class="py-3 px-6 text-sm font-bold text-emerald-700">' + ent + '</td>' +
+            '<td class="py-3 px-6 text-sm text-gray-600">' + plat + '</td>' +
+            '<td class="py-3 px-6">' +
+              '<button onclick="bukaDetail(\'' + app.id + '\', \'' + namaTahap + '\')" class="bg-blue-50 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-100 border border-blue-200">Detail</button>' +
+            '</td>' +
+          '</tr>';
+        }
+      } else {
+        barisTabel = '<tr><td colspan="5" class="py-10 text-center text-gray-500">Tidak ada kandidat di tahap ini.</td></tr>';
+      }
+
+      var htmlPop = '<div class="fixed inset-0 bg-gray-900/60 z-[200] flex items-center justify-center p-4">' +
+        '<div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[85vh] border border-gray-200">' +
+          '<div class="px-6 py-4 border-b flex justify-between items-center shadow-sm">' +
+            '<h2 class="text-lg font-bold">Daftar: <span class="text-blue-600">' + namaTahap + '</span></h2>' +
+            '<button onclick="tutupModal()" class="text-gray-400 hover:text-red-500"><span class="material-icons">close</span></button>' +
+          '</div>' +
+          '<div class="overflow-y-auto flex-1 p-0 hide-scrollbar">' +
+            '<table class="w-full text-left">' +
+              '<thead class="bg-gray-50 sticky top-0 border-b shadow-sm">' +
+                '<tr>' +
+                  '<th class="py-3 px-6 text-xs text-gray-500 uppercase">Nama</th>' +
+                  '<th class="py-3 px-6 text-xs text-gray-500 uppercase">Posisi</th>' +
+                  '<th class="py-3 px-6 text-xs text-gray-500 uppercase">Entitas</th>' +
+                  '<th class="py-3 px-6 text-xs text-gray-500 uppercase">Platform</th>' +
+                  '<th class="py-3 px-6 text-xs text-gray-500 uppercase">Aksi</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody>' + barisTabel + '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+      
+      document.getElementById('modalContainer').innerHTML = htmlPop;
+    };
+
+    window.bukaDetail = function(idApp, tahapAsal) {
+      var a = null;
+      for (var i = 0; i < applicants.length; i++) {
+        if (applicants[i].id === idApp) { a = applicants[i]; break; }
+      }
+      if (!a) return;
+
+      var waInfo = a.NOMOR_WA ? '<a href="https://wa.me/' + a.NOMOR_WA + '" target="_blank" class="text-blue-600 underline">' + a.NOMOR_WA + '</a>' : '-';
+      var cvInfo = a.CV ? '<a href="' + a.CV + '" target="_blank" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded font-bold text-xs inline-flex items-center gap-1">Lihat CV PDF</a>' : '<span class="text-gray-400 text-xs italic">Belum ada CV</span>';
+
+      var htmlDet = '<div class="fixed inset-0 bg-gray-900/60 z-[210] flex items-center justify-center p-4">' +
+        '<div class="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col border border-gray-200">' +
+          '<div class="px-5 py-4 border-b flex justify-between items-center shadow-sm">' +
+            '<h2 class="text-lg font-bold flex items-center gap-2"><span class="material-icons text-blue-600">person</span> Detail Profil</h2>' +
+            '<button onclick="bukaModalTahap(\'' + tahapAsal + '\')" class="text-gray-400 hover:text-blue-600"><span class="material-icons">arrow_back</span></button>' +
+          '</div>' +
+          '<div class="p-5 space-y-4">' +
+            '<div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">' +
+              '<p class="text-[10px] text-blue-600 uppercase font-bold mb-1">Nama Lengkap</p>' +
+              '<p class="text-base font-bold text-gray-800">' + (a.NAMA || '-') + '</p>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-3">' +
+              '<div class="p-2.5 bg-gray-50 rounded border border-gray-100">' +
+                '<p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Posisi</p>' +
+                '<p class="text-sm font-bold text-indigo-700">' + (a.POSISI || '-') + '</p>' +
+              '</div>' +
+              '<div class="p-2.5 bg-gray-50 rounded border border-gray-100">' +
+                '<p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Entitas</p>' +
+                '<p class="text-sm font-bold text-emerald-700">' + (a.ENTITAS || '-') + '</p>' +
+              '</div>' +
+              '<div class="p-2.5 bg-gray-50 rounded border border-gray-100">' +
+                '<p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Platform</p>' +
+                '<p class="text-sm font-bold">' + (a.PLATFORM || '-') + '</p>' +
+              '</div>' +
+              '<div class="p-2.5 bg-gray-50 rounded border border-gray-100">' +
+                '<p class="text-[10px] text-gray-500 uppercase font-bold mb-1">WhatsApp</p>' +
+                '<p class="text-sm font-bold">' + waInfo + '</p>' +
+              '</div>' +
+            '</div>' +
+            '<div class="pt-2">' +
+              '<p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Dokumen CV</p>' +
+              cvInfo +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+      
+      document.getElementById('modalContainer').innerHTML = htmlDet;
+    };
+
+    window.tutupModal = function() {
+      document.getElementById('modalContainer').innerHTML = '';
+    };
+  </script>
+</body>
+</html>
