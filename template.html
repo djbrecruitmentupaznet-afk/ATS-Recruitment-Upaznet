@@ -151,8 +151,8 @@
           return;
         }
 
-        querySnapshot.forEach((document) => {
-          const data = document.data();
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
           const tr = document.createElement('tr');
           tr.className = "hover:bg-gray-50 transition-colors";
           
@@ -164,10 +164,10 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${data.name}</td>
             <td class="px-6 py-4 text-sm text-gray-500 whitespace-pre-line">${preview}</td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button onclick="window.editTemplate('${document.id}')" class="text-blue-600 hover:text-blue-900 mx-2" title="Edit">
+              <button onclick="window.editTemplate('${docSnap.id}')" class="text-blue-600 hover:text-blue-900 mx-2" title="Edit">
                 <span class="material-icons text-xl">edit</span>
               </button>
-              <button onclick="window.deleteTemplateBtn('${document.id}', '${data.name}')" class="text-red-600 hover:text-red-900" title="Hapus">
+              <button onclick="window.deleteTemplateBtn('${docSnap.id}', '${data.name}')" class="text-red-600 hover:text-red-900" title="Hapus">
                 <span class="material-icons text-xl">delete</span>
               </button>
             </td>
@@ -176,7 +176,7 @@
 
           // Simpan data di global variable untuk mode edit
           window.templatesData = window.templatesData || {};
-          window.templatesData[document.id] = data;
+          window.templatesData[docSnap.id] = data;
         });
       } catch (error) {
         console.error("Error mengambil data:", error);
