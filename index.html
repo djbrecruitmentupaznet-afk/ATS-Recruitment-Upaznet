@@ -1069,9 +1069,13 @@
     window.kirimWA = function(noWa) {
       const text = document.getElementById('preview_wa').value;
       if(!text.trim()) return alert("Pilih template terlebih dahulu!");
+      
       let formatWa = noWa.toString().replace(/[^0-9]/g, '');
       if(formatWa.startsWith('0')) formatWa = '62' + formatWa.substring(1);
-      const url = `https://wa.me/${formatWa}?text=${encodeURIComponent(text)}`;
+      
+      // MENGGANTI wa.me MENJADI api.whatsapp.com/send AGAR EMOJI TIDAK RUSAK SAAT REDIRECT
+      const url = `https://api.whatsapp.com/send?phone=${formatWa}&text=${encodeURIComponent(text)}`;
+      
       window.open(url, '_blank');
       tutupModalTemplate();
     };
