@@ -143,11 +143,38 @@
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Isi Pesan WhatsApp</label>
-            <div class="mb-2 text-xs text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <strong>Tips Variabel:</strong> Anda dapat menggunakan variabel seperti <code>[NAMA]</code>, <code>[POSISI]</code>, <code>[JADWAL_INTERVIEW_HR]</code>, <code>[JAM_INTERVIEW_HR]</code>, dsb. Nanti sistem akan menggantinya otomatis saat di Dashboard Seleksi.
-            </div>
+            
+            <!-- REVISI: FITUR DAFTAR VARIABEL (KLIK UNTUK MEMBUKA) -->
+            <details class="mb-2 cursor-pointer outline-none">
+              <summary class="text-xs font-bold text-blue-700 bg-blue-50 p-2.5 rounded-lg border border-blue-200 flex items-center justify-between list-none hover:bg-blue-100 transition-colors">
+                <div class="flex items-center gap-1"><span class="material-icons text-[16px]">info</span> Lihat Daftar Variabel (Bisa di Copy-Paste)</div>
+                <span class="material-icons text-[18px]">expand_more</span>
+              </summary>
+              <div class="mt-1 p-3 bg-white border border-blue-100 rounded-lg text-[11px] text-gray-700 shadow-sm max-h-48 overflow-y-auto">
+                <p class="mb-2 italic text-blue-600">*Sistem akan mengganti teks di bawah ini (beserta tanda kurung sikunya) secara otomatis sesuai data kandidat.</p>
+                <div class="space-y-2.5">
+                   <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Data Umum:</strong> 
+                     <code>[NAMA]</code>, <code>[POSISI]</code>, <code>[ENTITAS]</code>, <code>[PLATFORM]</code>
+                   </div>
+                   <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Tahap HR:</strong> 
+                     <code>[JADWAL_INTERVIEW_HR]</code>, <code>[JAM_INTERVIEW_HR]</code>, <code>[METODE_INTERVIEW_HR]</code>, <code>[LINK_MEET_HR]</code>, <code>[TEMPAT_INTERVIEW_HR]</code>, <code>[GMAPS_INTERVIEW_HR]</code>
+                   </div>
+                   <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Tahap User:</strong> 
+                     <code>[JADWAL_INTERVIEW_USER]</code>, <code>[JAM_INTERVIEW_USER]</code>, <code>[METODE_INTERVIEW_USER]</code>, <code>[LINK_MEET_USER]</code>, <code>[TEMPAT_INTERVIEW_USER]</code>, <code>[GMAPS_INTERVIEW_USER]</code>
+                   </div>
+                   <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Tahap Direktur:</strong> 
+                     <code>[JADWAL_INTERVIEW_DIREKTUR]</code>, <code>[JAM_INTERVIEW_DIREKTUR]</code>, <code>[METODE_INTERVIEW_DIREKTUR]</code>, <code>[LINK_MEET_DIREKTUR]</code>, <code>[TEMPAT_INTERVIEW_DIREKTUR]</code>, <code>[GMAPS_INTERVIEW_DIREKTUR]</code>
+                   </div>
+                   <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Tahap Lanjutan:</strong> 
+                     <code>[TANGGAL_OFFERING]</code>, <code>[DEADLINE_OFFERING]</code>, <code>[TANGGAL_ONBOARDING]</code>
+                   </div>
+                </div>
+              </div>
+            </details>
+            
             <textarea id="templateMessage" required rows="8" placeholder="Halo [NAMA], kami mengundang Anda untuk interview..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
           </div>
+          
         </form>
       </div>
       <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
