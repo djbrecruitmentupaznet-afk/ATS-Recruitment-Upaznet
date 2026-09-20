@@ -263,10 +263,18 @@
       try {
         document.getElementById('loadingOverlay').style.display = 'flex'; 
         
+        // 1. Fetch Template WA & Urutkan
         try {
           const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
           templatesWA = [];
-          templatesSnapshot.forEach(doc => templatesWA.push(doc.data()));
+          templatesSnapshot.forEach(doc => {
+            let tplData = doc.data();
+            // Beri nilai order tinggi jika template lama belum punya order
+            tplData.order = tplData.order !== undefined ? tplData.order : 999999;
+            templatesWA.push(tplData);
+          });
+          // Mengurutkan sesuai field order yang telah diset di Master Template
+          templatesWA.sort((a, b) => a.order - b.order);
         } catch(e) {}
 
         try {
