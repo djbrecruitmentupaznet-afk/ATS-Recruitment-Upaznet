@@ -6,29 +6,12 @@
   <title>Master Template & Lokasi - HR System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <!-- SweetAlert2 untuk Notifikasi yang lebih cantik -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    .nav-btn {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      color: #4b5563;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-    .nav-btn:hover {
-      background-color: #ebf5ff;
-      color: #2563eb;
-    }
-    .nav-btn.active {
-      background-color: #2563eb;
-      color: white;
-    }
-    .nav-btn .material-icons {
-      margin-right: 0.75rem;
-    }
+    .nav-btn { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; color: #4b5563; transition: all 0.2s; text-decoration: none; }
+    .nav-btn:hover { background-color: #ebf5ff; color: #2563eb; }
+    .nav-btn.active { background-color: #2563eb; color: white; }
+    .nav-btn .material-icons { margin-right: 0.75rem; }
   </style>
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden">
@@ -49,38 +32,27 @@
 
   <!-- Main Content -->
   <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-    
     <!-- Header & Tabs -->
     <header class="bg-white border-b px-6 pt-4 flex flex-col gap-4 z-10">
       <div class="flex justify-between items-center">
         <h2 class="text-xl font-semibold text-gray-800" id="pageTitle">Manajemen Template WhatsApp</h2>
         <div>
-          <!-- Tombol Tambah Template WA -->
           <button id="btnAddWA" onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium transition-colors">
             <span class="material-icons text-sm mr-2">add</span> Tambah Template Baru
           </button>
-          <!-- Tombol Tambah Lokasi (Disembunyikan secara default) -->
           <button id="btnAddLokasi" onclick="openLocationModal()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium transition-colors">
             <span class="material-icons text-sm mr-2">add_location_alt</span> Tambah Lokasi Baru
           </button>
         </div>
       </div>
-
-      <!-- Tab Navigation -->
       <div class="flex gap-6 mt-1">
-        <button id="tab-wa" onclick="switchTab('wa')" class="pb-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm transition-colors outline-none">
-          Template Whatsapp
-        </button>
-        <button id="tab-lokasi" onclick="switchTab('lokasi')" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-emerald-600 font-medium text-sm transition-colors outline-none">
-          Data Lokasi
-        </button>
+        <button id="tab-wa" onclick="switchTab('wa')" class="pb-3 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm transition-colors outline-none">Template Whatsapp</button>
+        <button id="tab-lokasi" onclick="switchTab('lokasi')" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-emerald-600 font-medium text-sm transition-colors outline-none">Data Lokasi</button>
       </div>
     </header>
 
-    <!-- VIEWS SECTION -->
     <div class="flex-1 overflow-auto p-6">
-      
-      <!-- View: Tabel Template WA -->
+      <!-- Tabel Template WA -->
       <div id="view-wa" class="bg-white rounded-xl shadow-sm border overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -88,18 +60,16 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">No</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Nama Template</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preview Pesan</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Aksi</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Aksi</th>
             </tr>
           </thead>
           <tbody id="templateTableBody" class="bg-white divide-y divide-gray-200">
-            <tr>
-              <td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data template...</td>
-            </tr>
+            <tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data template...</td></tr>
           </tbody>
         </table>
       </div>
 
-      <!-- View: Tabel Data Lokasi (Disembunyikan secara default) -->
+      <!-- Tabel Data Lokasi -->
       <div id="view-lokasi" class="bg-white rounded-xl shadow-sm border overflow-hidden hidden">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -111,47 +81,36 @@
             </tr>
           </thead>
           <tbody id="locationTableBody" class="bg-white divide-y divide-gray-200">
-            <tr>
-              <td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data lokasi...</td>
-            </tr>
+            <tr><td colspan="4" class="px-6 py-10 text-center text-gray-500">Memuat data lokasi...</td></tr>
           </tbody>
         </table>
       </div>
-
     </div>
   </main>
 
-  <!-- ========================================== -->
-  <!-- MODAL: FORM TAMBAH/EDIT TEMPLATE WA        -->
-  <!-- ========================================== -->
+  <!-- MODAL TEMPLATE WA -->
   <div id="templateModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[90vh]">
       <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
         <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">Tambah Template WA</h3>
-        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-          <span class="material-icons">close</span>
-        </button>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><span class="material-icons">close</span></button>
       </div>
       <div class="p-6 overflow-y-auto">
         <form id="templateForm" class="space-y-4">
           <input type="hidden" id="templateId">
-          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nama Template</label>
-            <input type="text" id="templateName" required placeholder="Contoh: Panggilan Interview Tahap 1" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <input type="text" id="templateName" required placeholder="Contoh: Panggilan Interview Tahap 1" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
           </div>
-          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Isi Pesan WhatsApp</label>
-            
-            <!-- REVISI: FITUR DAFTAR VARIABEL (KLIK UNTUK MEMBUKA) -->
             <details class="mb-2 cursor-pointer outline-none">
               <summary class="text-xs font-bold text-blue-700 bg-blue-50 p-2.5 rounded-lg border border-blue-200 flex items-center justify-between list-none hover:bg-blue-100 transition-colors">
                 <div class="flex items-center gap-1"><span class="material-icons text-[16px]">info</span> Lihat Daftar Variabel (Bisa di Copy-Paste)</div>
                 <span class="material-icons text-[18px]">expand_more</span>
               </summary>
               <div class="mt-1 p-3 bg-white border border-blue-100 rounded-lg text-[11px] text-gray-700 shadow-sm max-h-48 overflow-y-auto">
-                <p class="mb-2 italic text-blue-600">*Sistem akan mengganti teks di bawah ini (beserta tanda kurung sikunya) secara otomatis sesuai data kandidat.</p>
+                <p class="mb-2 italic text-blue-600">*Sistem akan mengganti teks di bawah ini secara otomatis sesuai data kandidat.</p>
                 <div class="space-y-2.5">
                    <div><strong class="text-gray-900 border-b border-gray-200 block mb-1">Data Umum:</strong> 
                      <code>[NAMA]</code>, <code>[POSISI]</code>, <code>[ENTITAS]</code>, <code>[PLATFORM]</code>
@@ -171,10 +130,8 @@
                 </div>
               </div>
             </details>
-            
-            <textarea id="templateMessage" required rows="8" placeholder="Halo [NAMA], kami mengundang Anda untuk interview..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+            <textarea id="templateMessage" required rows="8" placeholder="Halo [NAMA], kami mengundang Anda untuk interview..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
           </div>
-          
         </form>
       </div>
       <div class="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
@@ -186,29 +143,23 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MODAL: FORM TAMBAH/EDIT LOKASI INTERVIEW   -->
-  <!-- ========================================== -->
+  <!-- MODAL LOKASI INTERVIEW -->
   <div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
     <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 overflow-hidden flex flex-col max-h-[90vh]">
       <div class="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
         <h3 class="text-lg font-semibold text-gray-800" id="modalTitleLokasi">Tambah Lokasi Baru</h3>
-        <button onclick="closeLocationModal()" class="text-gray-400 hover:text-gray-600">
-          <span class="material-icons">close</span>
-        </button>
+        <button onclick="closeLocationModal()" class="text-gray-400 hover:text-gray-600"><span class="material-icons">close</span></button>
       </div>
       <div class="p-6 overflow-y-auto">
         <form class="space-y-4">
           <input type="hidden" id="locationId">
-          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Nama / Detail Lokasi</label>
-            <textarea id="locationName" required rows="3" placeholder="Contoh: Gedung A Lt 2, Ruang Meeting Utama" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"></textarea>
+            <textarea id="locationName" required rows="3" placeholder="Contoh: Gedung A Lt 2" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
           </div>
-          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Link Google Maps (Opsional)</label>
-            <input type="url" id="locationGmaps" placeholder="https://maps.google.com/..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+            <input type="url" id="locationGmaps" placeholder="https://maps.google.com/..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none">
           </div>
         </form>
       </div>
@@ -221,11 +172,9 @@
     </div>
   </div>
 
-  <!-- Firebase Configuration & Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    // TAMBAHAN: Import modul Authentication
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -239,85 +188,79 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app); // Inisialisasi Auth
+    const auth = getAuth(app);
 
-    // ==========================================
-    // LOGIKA TAB NAVIGATION
-    // ==========================================
+    let templatesArray = []; // MENAMPUNG ARRAY TEMPLATE UNTUK PENGURUTAN
+
     window.switchTab = function(tab) {
-      const tabWa = document.getElementById('tab-wa');
-      const tabLokasi = document.getElementById('tab-lokasi');
-      const viewWa = document.getElementById('view-wa');
-      const viewLokasi = document.getElementById('view-lokasi');
-      const btnAddWA = document.getElementById('btnAddWA');
-      const btnAddLokasi = document.getElementById('btnAddLokasi');
-      const pageTitle = document.getElementById('pageTitle');
-
+      const tabWa = document.getElementById('tab-wa'), tabLokasi = document.getElementById('tab-lokasi');
+      const viewWa = document.getElementById('view-wa'), viewLokasi = document.getElementById('view-lokasi');
+      const btnAddWA = document.getElementById('btnAddWA'), btnAddLokasi = document.getElementById('btnAddLokasi');
+      
       if (tab === 'wa') {
-        pageTitle.innerText = "Manajemen Template WhatsApp";
-        
-        tabWa.classList.add('border-blue-600', 'text-blue-600', 'font-semibold');
-        tabWa.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
-        
-        tabLokasi.classList.add('border-transparent', 'text-gray-500', 'font-medium');
-        tabLokasi.classList.remove('border-emerald-600', 'text-emerald-600', 'font-semibold');
-
-        viewWa.classList.remove('hidden');
-        viewLokasi.classList.add('hidden');
-
-        btnAddWA.classList.remove('hidden');
-        btnAddLokasi.classList.add('hidden');
-
-      } else if (tab === 'lokasi') {
-        pageTitle.innerText = "Master Data Lokasi Interview";
-
-        tabLokasi.classList.add('border-emerald-600', 'text-emerald-600', 'font-semibold');
-        tabLokasi.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
-        
-        tabWa.classList.add('border-transparent', 'text-gray-500', 'font-medium');
-        tabWa.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
-
-        viewLokasi.classList.remove('hidden');
-        viewWa.classList.add('hidden');
-
-        btnAddLokasi.classList.remove('hidden');
-        btnAddWA.classList.add('hidden');
+        document.getElementById('pageTitle').innerText = "Manajemen Template WhatsApp";
+        tabWa.classList.add('border-blue-600', 'text-blue-600', 'font-semibold'); tabWa.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
+        tabLokasi.classList.add('border-transparent', 'text-gray-500', 'font-medium'); tabLokasi.classList.remove('border-emerald-600', 'text-emerald-600', 'font-semibold');
+        viewWa.classList.remove('hidden'); viewLokasi.classList.add('hidden');
+        btnAddWA.classList.remove('hidden'); btnAddLokasi.classList.add('hidden');
+      } else {
+        document.getElementById('pageTitle').innerText = "Master Data Lokasi Interview";
+        tabLokasi.classList.add('border-emerald-600', 'text-emerald-600', 'font-semibold'); tabLokasi.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
+        tabWa.classList.add('border-transparent', 'text-gray-500', 'font-medium'); tabWa.classList.remove('border-blue-600', 'text-blue-600', 'font-semibold');
+        viewLokasi.classList.remove('hidden'); viewWa.classList.add('hidden');
+        btnAddLokasi.classList.remove('hidden'); btnAddWA.classList.add('hidden');
       }
     }
 
     // ==========================================
-    // LOGIKA TEMPLATE WA
+    // LOGIKA TEMPLATE WA (DENGAN PENGURUTAN)
     // ==========================================
     async function loadTemplates() {
       const tbody = document.getElementById('templateTableBody');
       try {
         const querySnapshot = await getDocs(collection(db, "templates"));
-        tbody.innerHTML = ''; 
-        let index = 1;
+        templatesArray = [];
         
-        if (querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          templatesArray.push({
+            id: docSnap.id,
+            name: data.name || 'Tanpa Nama',
+            message: data.message || '',
+            order: data.order !== undefined ? data.order : 999999 // Fallback untuk data lama
+          });
+        });
+
+        // Urutkan berdasarkan field 'order'
+        templatesArray.sort((a, b) => a.order - b.order);
+
+        tbody.innerHTML = ''; 
+        if (templatesArray.length === 0) {
           tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada template. Silakan tambah baru.</td></tr>`;
           return;
         }
 
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
+        templatesArray.forEach((tpl, i) => {
           const tr = document.createElement('tr');
           tr.className = "hover:bg-gray-50 transition-colors";
+          const preview = tpl.message.length > 80 ? tpl.message.substring(0, 80) + '...' : tpl.message;
           
-          const namaTemplate = data.name || 'Tanpa Nama';
-          const isiPesan = data.message || '';
-          const preview = isiPesan.length > 80 ? isiPesan.substring(0, 80) + '...' : isiPesan;
+          // Logika Tombol Panah (Up/Down)
+          const btnUp = i === 0 ? `<span class="material-icons text-xl text-gray-200 mx-0.5">arrow_upward</span>` : `<button onclick="window.moveTemplate(${i}, -1)" class="text-gray-400 hover:text-blue-600 mx-0.5" title="Naikkan"><span class="material-icons text-xl">arrow_upward</span></button>`;
+          const btnDown = i === templatesArray.length - 1 ? `<span class="material-icons text-xl text-gray-200 mx-0.5">arrow_downward</span>` : `<button onclick="window.moveTemplate(${i}, 1)" class="text-gray-400 hover:text-blue-600 mx-0.5" title="Turunkan"><span class="material-icons text-xl">arrow_downward</span></button>`;
           
           tr.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index++}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${namaTemplate}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${i + 1}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${tpl.name}</td>
             <td class="px-6 py-4 text-sm text-gray-500 whitespace-pre-line">${preview}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button onclick="window.editTemplate('${docSnap.id}')" class="text-blue-600 hover:text-blue-900 mx-2" title="Edit">
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end items-center gap-1">
+              ${btnUp}
+              ${btnDown}
+              <div class="w-px h-4 bg-gray-300 mx-2"></div>
+              <button onclick="window.editTemplate('${tpl.id}')" class="text-blue-600 hover:text-blue-900 mx-1" title="Edit">
                 <span class="material-icons text-xl">edit</span>
               </button>
-              <button onclick="window.deleteTemplateBtn('${docSnap.id}', '${namaTemplate}')" class="text-red-600 hover:text-red-900" title="Hapus">
+              <button onclick="window.deleteTemplateBtn('${tpl.id}', '${tpl.name.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900 mx-1" title="Hapus">
                 <span class="material-icons text-xl">delete</span>
               </button>
             </td>
@@ -325,31 +268,51 @@
           tbody.appendChild(tr);
 
           window.templatesData = window.templatesData || {};
-          window.templatesData[docSnap.id] = { name: namaTemplate, message: isiPesan };
+          window.templatesData[tpl.id] = { name: tpl.name, message: tpl.message };
         });
       } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data template. Cek koneksi & hak akses.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data template. Cek koneksi.</td></tr>`;
+      }
+    }
+
+    // FUNGSI MEMINDAHKAN POSISI TEMPLATE
+    window.moveTemplate = async function(index, direction) {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= templatesArray.length) return;
+
+      Swal.fire({ title: 'Menyimpan urutan...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+      try {
+        // Normalisasi order terlebih dahulu agar berurutan 0, 1, 2...
+        templatesArray.forEach((item, i) => item.order = i);
+
+        // Tukar posisi di memori array
+        const tempOrder = templatesArray[index].order;
+        templatesArray[index].order = templatesArray[targetIndex].order;
+        templatesArray[targetIndex].order = tempOrder;
+
+        // Update ke Firestore
+        await updateDoc(doc(db, "templates", templatesArray[index].id), { order: templatesArray[index].order });
+        await updateDoc(doc(db, "templates", templatesArray[targetIndex].id), { order: templatesArray[targetIndex].order });
+
+        await loadTemplates();
+        Swal.close();
+      } catch (error) {
+        Swal.fire('Error', 'Gagal memindah urutan', 'error');
       }
     }
 
     window.openModal = function() {
       document.getElementById('modalTitle').innerText = "Tambah Template WA";
-      document.getElementById('templateId').value = "";
-      document.getElementById('templateName').value = "";
-      document.getElementById('templateMessage').value = "";
+      document.getElementById('templateId').value = ""; document.getElementById('templateName').value = ""; document.getElementById('templateMessage').value = "";
       document.getElementById('templateModal').classList.remove('hidden');
     }
-
-    window.closeModal = function() {
-      document.getElementById('templateModal').classList.add('hidden');
-    }
+    window.closeModal = function() { document.getElementById('templateModal').classList.add('hidden'); }
 
     window.editTemplate = function(id) {
       const data = window.templatesData[id];
       document.getElementById('modalTitle').innerText = "Edit Template WA";
-      document.getElementById('templateId').value = id;
-      document.getElementById('templateName').value = data.name;
-      document.getElementById('templateMessage').value = data.message;
+      document.getElementById('templateId').value = id; document.getElementById('templateName').value = data.name; document.getElementById('templateMessage').value = data.message;
       document.getElementById('templateModal').classList.remove('hidden');
     }
 
@@ -361,25 +324,24 @@
 
       if (!name || !message) return Swal.fire('Peringatan', 'Nama dan Isi Template tidak boleh kosong!', 'warning');
 
-      btn.disabled = true;
-      btn.innerHTML = `<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...`;
+      btn.disabled = true; btn.innerHTML = `<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...`;
 
       try {
         if (id) {
           await updateDoc(doc(db, "templates", id), { name: name, message: message, updatedAt: new Date() });
           Swal.fire('Berhasil!', 'Template berhasil diperbarui.', 'success');
         } else {
-          await addDoc(collection(db, "templates"), { name: name, message: message, createdAt: new Date() });
+          // Tambah `order` otomatis ke angka terbesar (agar masuk paling bawah)
+          await addDoc(collection(db, "templates"), { 
+            name: name, message: message, 
+            order: templatesArray.length, 
+            createdAt: new Date() 
+          });
           Swal.fire('Berhasil!', 'Template baru berhasil ditambahkan.', 'success');
         }
-        closeModal();
-        loadTemplates(); 
-      } catch (error) {
-        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan data.', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span class="material-icons text-sm mr-1">save</span> Simpan`;
-      }
+        closeModal(); loadTemplates(); 
+      } catch (error) { Swal.fire('Error', 'Terjadi kesalahan saat menyimpan data.', 'error'); } 
+      finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons text-sm mr-1">save</span> Simpan`; }
     }
 
     window.deleteTemplateBtn = function(id, name) {
@@ -389,36 +351,25 @@
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            await deleteDoc(doc(db, "templates", id));
-            Swal.fire('Terhapus!', 'Template telah dihapus.', 'success');
-            loadTemplates(); 
+            await deleteDoc(doc(db, "templates", id)); Swal.fire('Terhapus!', 'Template telah dihapus.', 'success'); loadTemplates(); 
           } catch (error) { Swal.fire('Error', 'Gagal menghapus template.', 'error'); }
         }
       });
     }
 
     // ==========================================
-    // LOGIKA DATA LOKASI
+    // LOGIKA LOKASI & AUTH
     // ==========================================
     async function loadLocations() {
       const tbody = document.getElementById('locationTableBody');
       try {
         const querySnapshot = await getDocs(collection(db, "locations"));
-        tbody.innerHTML = ''; 
-        let index = 1;
-        
-        if (querySnapshot.empty) {
-          tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada data lokasi. Silakan tambah baru.</td></tr>`;
-          return;
-        }
+        tbody.innerHTML = ''; let index = 1;
+        if (querySnapshot.empty) { tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada data lokasi. Silakan tambah baru.</td></tr>`; return; }
 
         querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-gray-50 transition-colors";
-          
-          const namaLokasi = data.nama || 'Tanpa Nama';
-          const gmapsLink = data.gmaps || '-';
+          const data = docSnap.data(); const tr = document.createElement('tr'); tr.className = "hover:bg-gray-50 transition-colors";
+          const namaLokasi = data.nama || 'Tanpa Nama', gmapsLink = data.gmaps || '-';
           const linkHtml = gmapsLink !== '-' ? `<a href="${gmapsLink}" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1"><span class="material-icons text-[14px]">map</span> Buka Maps</a>` : '<span class="text-gray-400 italic">Tidak ada link</span>';
           
           tr.innerHTML = `
@@ -426,103 +377,36 @@
             <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-pre-line">${namaLokasi}</td>
             <td class="px-6 py-4 text-sm">${linkHtml}</td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button onclick="window.editLocation('${docSnap.id}')" class="text-emerald-600 hover:text-emerald-900 mx-2" title="Edit Lokasi">
-                <span class="material-icons text-xl">edit</span>
-              </button>
-              <button onclick="window.deleteLocationBtn('${docSnap.id}', '${namaLokasi.replace(/\n/g, ' ')}')"" class="text-red-600 hover:text-red-900" title="Hapus Lokasi">
-                <span class="material-icons text-xl">delete</span>
-              </button>
+              <button onclick="window.editLocation('${docSnap.id}')" class="text-emerald-600 hover:text-emerald-900 mx-2" title="Edit Lokasi"><span class="material-icons text-xl">edit</span></button>
+              <button onclick="window.deleteLocationBtn('${docSnap.id}', '${namaLokasi.replace(/\n/g, ' ')}')"" class="text-red-600 hover:text-red-900" title="Hapus Lokasi"><span class="material-icons text-xl">delete</span></button>
             </td>
           `;
-          tbody.appendChild(tr);
-
-          window.locationsData = window.locationsData || {};
-          window.locationsData[docSnap.id] = { nama: namaLokasi, gmaps: data.gmaps || '' };
+          tbody.appendChild(tr); window.locationsData = window.locationsData || {}; window.locationsData[docSnap.id] = { nama: namaLokasi, gmaps: data.gmaps || '' };
         });
-      } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data lokasi.</td></tr>`;
-      }
+      } catch (error) { tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-500">Gagal memuat data lokasi.</td></tr>`; }
     }
-
-    window.openLocationModal = function() {
-      document.getElementById('modalTitleLokasi').innerText = "Tambah Lokasi Baru";
-      document.getElementById('locationId').value = "";
-      document.getElementById('locationName').value = "";
-      document.getElementById('locationGmaps').value = "";
-      document.getElementById('locationModal').classList.remove('hidden');
-    }
-
-    window.closeLocationModal = function() {
-      document.getElementById('locationModal').classList.add('hidden');
-    }
-
-    window.editLocation = function(id) {
-      const data = window.locationsData[id];
-      document.getElementById('modalTitleLokasi').innerText = "Edit Lokasi";
-      document.getElementById('locationId').value = id;
-      document.getElementById('locationName').value = data.nama;
-      document.getElementById('locationGmaps').value = data.gmaps;
-      document.getElementById('locationModal').classList.remove('hidden');
-    }
-
+    
+    window.openLocationModal = function() { document.getElementById('modalTitleLokasi').innerText = "Tambah Lokasi Baru"; document.getElementById('locationId').value = ""; document.getElementById('locationName').value = ""; document.getElementById('locationGmaps').value = ""; document.getElementById('locationModal').classList.remove('hidden'); }
+    window.closeLocationModal = function() { document.getElementById('locationModal').classList.add('hidden'); }
+    window.editLocation = function(id) { const data = window.locationsData[id]; document.getElementById('modalTitleLokasi').innerText = "Edit Lokasi"; document.getElementById('locationId').value = id; document.getElementById('locationName').value = data.nama; document.getElementById('locationGmaps').value = data.gmaps; document.getElementById('locationModal').classList.remove('hidden'); }
     window.saveLocation = async function() {
-      const id = document.getElementById('locationId').value;
-      const nama = document.getElementById('locationName').value.trim();
-      const gmaps = document.getElementById('locationGmaps').value.trim();
-      const btn = document.getElementById('saveLocationBtn');
-
+      const id = document.getElementById('locationId').value, nama = document.getElementById('locationName').value.trim(), gmaps = document.getElementById('locationGmaps').value.trim(), btn = document.getElementById('saveLocationBtn');
       if (!nama) return Swal.fire('Peringatan', 'Detail/Nama Lokasi wajib diisi!', 'warning');
-
-      btn.disabled = true;
-      btn.innerHTML = `<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...`;
-
+      btn.disabled = true; btn.innerHTML = `<span class="material-icons text-sm mr-1 animate-spin">sync</span> Menyimpan...`;
       try {
-        if (id) {
-          await updateDoc(doc(db, "locations", id), { nama: nama, gmaps: gmaps, updatedAt: new Date() });
-          Swal.fire('Berhasil!', 'Data lokasi berhasil diperbarui.', 'success');
-        } else {
-          await addDoc(collection(db, "locations"), { nama: nama, gmaps: gmaps, createdAt: new Date() });
-          Swal.fire('Berhasil!', 'Data lokasi baru berhasil ditambahkan.', 'success');
-        }
-        closeLocationModal();
-        loadLocations(); 
-      } catch (error) {
-        Swal.fire('Error', 'Terjadi kesalahan saat menyimpan data lokasi.', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span class="material-icons text-sm mr-1">save</span> Simpan Lokasi`;
-      }
+        if (id) { await updateDoc(doc(db, "locations", id), { nama: nama, gmaps: gmaps, updatedAt: new Date() }); Swal.fire('Berhasil!', 'Data lokasi diperbarui.', 'success'); } 
+        else { await addDoc(collection(db, "locations"), { nama: nama, gmaps: gmaps, createdAt: new Date() }); Swal.fire('Berhasil!', 'Lokasi ditambahkan.', 'success'); }
+        closeLocationModal(); loadLocations(); 
+      } catch (error) { Swal.fire('Error', 'Terjadi kesalahan.', 'error'); } finally { btn.disabled = false; btn.innerHTML = `<span class="material-icons text-sm mr-1">save</span> Simpan Lokasi`; }
     }
-
     window.deleteLocationBtn = function(id, name) {
-      Swal.fire({
-        title: 'Hapus Lokasi?', text: `Anda yakin ingin menghapus lokasi "${name}"?`, icon: 'warning',
-        showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Ya, hapus!', cancelButtonText: 'Batal'
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          try {
-            await deleteDoc(doc(db, "locations", id));
-            Swal.fire('Terhapus!', 'Lokasi telah dihapus.', 'success');
-            loadLocations(); 
-          } catch (error) { Swal.fire('Error', 'Gagal menghapus lokasi.', 'error'); }
-        }
-      });
+      Swal.fire({ title: 'Hapus Lokasi?', text: `Hapus lokasi "${name}"?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6', confirmButtonText: 'Ya', cancelButtonText: 'Batal' })
+      .then(async (result) => { if (result.isConfirmed) { try { await deleteDoc(doc(db, "locations", id)); Swal.fire('Terhapus!', '', 'success'); loadLocations(); } catch (error) { Swal.fire('Error', '', 'error'); } } });
     }
 
-    // ==========================================
-    // PENGECEKAN AUTENTIKASI (PENTING!)
-    // ==========================================
     onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Jika sudah login, barulah tarik data dari database
-        loadTemplates();
-        loadLocations();
-      } else {
-        // Jika belum login / tidak ada token Auth, kembali ke halaman Dashboard (index.html)
-        window.location.href = 'index.html';
-      }
+      if (user) { loadTemplates(); loadLocations(); } else { window.location.href = 'index.html'; }
     });
-
   </script>
 </body>
 </html>
