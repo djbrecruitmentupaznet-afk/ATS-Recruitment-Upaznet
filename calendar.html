@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <base target="_top">
   <!-- Tailwind CSS & Google Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -16,8 +17,6 @@
   </style>
 </head>
 <body class="bg-gray-50 flex h-screen w-full overflow-hidden text-gray-800">
-
-  
 
   <!-- OVERLAY LOADING BIASA -->
   <div id="loadingOverlay" style="display: none;" class="fixed inset-0 bg-gray-800/40 z-[999] flex flex-col items-center justify-center backdrop-blur-sm">
@@ -42,10 +41,8 @@
       <a href="index.html" class="nav-btn"><span class="material-icons">dashboard</span> Dashboard Seleksi</a>
       <a href="calendar.html" class="nav-btn active"><span class="material-icons">calendar_month</span> Jadwal Interview</a>
       <a href="analytics.html" class="nav-btn"><span class="material-icons">analytics</span> Analytics</a>
-      <!-- Menu Baru Master Template -->
       <a href="template.html" class="nav-btn"><span class="material-icons">textsms</span> Master Template</a>
     </div>
-    <!-- TOMBOL LOGOUT -->
     <div class="p-4 border-t border-gray-200">
       <button onclick="logoutApp()" class="w-full flex items-center justify-center gap-2 p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-bold transition-colors border border-red-100 shadow-sm">
         <span class="material-icons text-[18px]">logout</span> Keluar (Logout)
@@ -115,6 +112,7 @@
   </main>
 
   <div id="modalContainer"></div>
+  <div id="modalTemplateContainer"></div>
 
   <!-- SCRIPT FIREBASE HYBRID + AUTH -->
   <script type="module">
@@ -122,7 +120,6 @@
     import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // 1. MASUKKAN CONFIG FIREBASE ANDA DI SINI
     const firebaseConfig = {
       apiKey: "AIzaSyAs7-E4Jw5FhQWpOhzP4MTX_PSD4Mxvueo",
       authDomain: "recruitmentupaznetats.firebaseapp.com",
@@ -143,15 +140,13 @@
     window.auth = auth;
     window.signOut = signOut;
 
-    // PENJAGA PINTU (AUTH CHECKER)
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    window.initApp(); // Cukup jalankan aplikasi langsung
-  } else {
-    // Jika belum login, langsung tendang balik ke index.html
-    window.location.href = 'index.html';
-  }
-});
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.initApp(); 
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
   </script>
 
   <script>
@@ -160,8 +155,9 @@ onAuthStateChanged(auth, (user) => {
     let currentYear = new Date().getFullYear();
     let selectedApplicantData = null;
     let tempFormData = {};
+    let templatesWA = []; 
+    let locationsData = []; 
 
-    // 2. MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
     const GAS_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwD7HjhmGyLeQsqSx6BK8rSTTp4SgZ1LECJoyllD9oF0rcugJq2icwr6LwvqRmtw-4lIA/exec";
 
     window.logoutApp = async function() {
@@ -172,6 +168,27 @@ onAuthStateChanged(auth, (user) => {
 
     window.initApp = async function() {
       try {
+        document.getElementById('loadingOverlay').style.display = 'flex'; 
+
+        // Fetch Data Template
+        try {
+          const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
+          templatesWA = [];
+          templatesSnapshot.forEach(doc => {
+            let tplData = doc.data();
+            tplData.order = tplData.order !== undefined ? tplData.order : 999999;
+            templatesWA.push(tplData);
+          });
+          templatesWA.sort((a, b) => a.order - b.order);
+        } catch(e) {}
+
+        // Fetch Data Lokasi
+        try {
+          const locationsSnapshot = await window.getDocs(window.collection(window.db, "locations"));
+          locationsData = [];
+          locationsSnapshot.forEach(doc => locationsData.push({ id: doc.id, ...doc.data() }));
+        } catch(e) {}
+
         const applicantsSnapshot = await window.getDocs(window.collection(window.db, "applicants"));
         applicants = [];
         applicantsSnapshot.forEach(doc => {
@@ -180,8 +197,10 @@ onAuthStateChanged(auth, (user) => {
 
         renderFilterOptions(); 
         renderCalendar();
+        document.getElementById('loadingOverlay').style.display = 'none'; 
       } catch (err) {
         console.error("Gagal memuat data:", err);
+        document.getElementById('loadingOverlay').style.display = 'none';
       }
     };
 
@@ -321,6 +340,48 @@ onAuthStateChanged(auth, (user) => {
       document.getElementById('calendarGrid').innerHTML = html;
     }
 
+    window.handleMetodeChange = function() {
+      const metode = document.getElementById('fm_metode').value;
+      const containerOnline = document.getElementById('container_online');
+      const containerOffline = document.getElementById('container_offline');
+      
+      if(metode === 'Online') {
+        containerOnline.classList.remove('hidden');
+        containerOffline.classList.add('hidden');
+      } else if(metode === 'Offline') {
+        containerOnline.classList.add('hidden');
+        containerOffline.classList.remove('hidden');
+      } else {
+        containerOnline.classList.add('hidden');
+        containerOffline.classList.add('hidden');
+      }
+    };
+
+    window.handleLokasiChange = function() {
+      const sel = document.getElementById('fm_lokasi');
+      const opt = sel.options[sel.selectedIndex];
+      if(!opt || sel.value === "") {
+         document.getElementById('fm_nama_lokasi').value = "";
+         document.getElementById('fm_gmaps').value = "";
+         document.getElementById('lbl_gmaps').href = "#";
+         document.getElementById('lbl_gmaps').innerText = "-";
+         return;
+      }
+      const nama = opt.getAttribute('data-nama') || '';
+      const gmaps = opt.getAttribute('data-gmaps') || '';
+      document.getElementById('fm_nama_lokasi').value = nama;
+      document.getElementById('fm_gmaps').value = gmaps;
+      
+      const lbl = document.getElementById('lbl_gmaps');
+      if(gmaps && gmaps !== '-') {
+        lbl.href = gmaps;
+        lbl.innerText = gmaps;
+      } else {
+        lbl.href = '#';
+        lbl.innerText = '-';
+      }
+    };
+
     window.openModal = function(type, appId = null) {
       tempFormData = {};
       let title = '', bodyHtml = '', saveFn = '', subHeader = '';
@@ -339,6 +400,11 @@ onAuthStateChanged(auth, (user) => {
           <span class="font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-100">${a.ENTITAS}</span>
           <span class="text-gray-300">|</span>
           <span class="font-mono text-gray-500">${a.id}</span>
+          <div class="ml-auto flex items-center">
+             <button onclick="${a.NOMOR_WA ? `bukaModalTemplate('${a.id}')` : `alert('Nomor WA kandidat tidak tersedia')`}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-colors" title="Kirim Pesan WhatsApp">
+               <span class="material-icons text-[14px]">whatsapp</span> Hubungi WA Kandidat
+             </button>
+          </div>
         </div>
       `;
       
@@ -348,7 +414,40 @@ onAuthStateChanged(auth, (user) => {
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
             <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jadwal Interview ${type}</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JADWAL_INTERVIEW_'+t]||''}"></div>
             <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Jam Interview</label><input type="time" id="fm_jam" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a['JAM_INTERVIEW_'+t]||''}"></div>
-            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label><select id="fm_metode" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option><option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option></select></div>
+            
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Metode Interview</label>
+              <select id="fm_metode" onchange="handleMetodeChange()" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none">
+                <option value="">-- Pilih --</option>
+                <option value="Online" ${a['METODE_INTERVIEW_'+t]==='Online'?'selected':''}>Online</option>
+                <option value="Offline" ${a['METODE_INTERVIEW_'+t]==='Offline'?'selected':''}>Offline</option>
+              </select>
+            </div>
+
+            <div id="container_online" class="space-y-1.5 md:col-span-1 ${a['METODE_INTERVIEW_'+t]==='Online' ? '' : 'hidden'}">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Link Google Meet</label>
+              <input type="url" id="fm_link_meet" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" placeholder="https://meet.google.com/..." value="${a['LINK_MEET_'+t]||''}">
+            </div>
+
+            <div id="container_offline" class="space-y-1.5 md:col-span-1 ${a['METODE_INTERVIEW_'+t]==='Offline' ? '' : 'hidden'}">
+              <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Pilih Lokasi</label>
+              <select id="fm_lokasi" onchange="handleLokasiChange()" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none">
+                <option value="">-- Pilih Lokasi --</option>
+                ${locationsData.map(loc => `<option value="${loc.id}" data-nama="${loc.nama}" data-gmaps="${loc.gmaps}" ${a['ID_LOKASI_'+t] === loc.id ? 'selected' : ''}>${loc.nama}</option>`).join('')}
+              </select>
+              <div class="mt-2 text-[11px] text-gray-600 break-all bg-gray-50 p-2 border rounded">
+                <strong>Gmaps:</strong> <a href="${a['GMAPS_'+t]||'#'}" id="lbl_gmaps" target="_blank" class="text-blue-500 hover:underline">${a['GMAPS_'+t]||'-'}</a>
+                <input type="hidden" id="fm_nama_lokasi" value="${a['NAMA_LOKASI_'+t]||''}">
+                <input type="hidden" id="fm_gmaps" value="${a['GMAPS_'+t]||''}">
+              </div>
+            </div>
+            
+            <div class="md:col-span-2 flex justify-end pb-2 border-b border-gray-100">
+              <button onclick="simpanTanpaTutup('${type}')" class="px-4 py-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 shadow-sm flex items-center gap-1 transition-colors">
+                <span class="material-icons text-[14px]">save</span> Simpan Tgl, Jam & Metode
+              </button>
+            </div>
+
             <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kesediaan Hadir</label><select id="fm_sedia" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Bersedia'?'selected':''}>Bersedia</option><option value="Tidak Bersedia" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Bersedia'?'selected':''}>Tidak Bersedia</option><option value="Tidak Merespon" ${a['KESEDIAAN_INTERVIEW_'+t]==='Tidak Merespon'?'selected':''}>Tidak Merespon</option></select></div>
             <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Kehadiran Aktual</label><select id="fm_hadir" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Hadir'?'selected':''}>Hadir</option><option value="Tidak Hadir" ${a['KEHADIRAN_INTERVIEW_'+t]==='Tidak Hadir'?'selected':''}>Tidak Hadir</option></select></div>
             
@@ -372,12 +471,12 @@ onAuthStateChanged(auth, (user) => {
           </div>
         `;
       } else if (type === 'Offering') {
-          bodyHtml = `
-            <div class="grid grid-cols-1 gap-5 mt-2">
-              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Offering</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_OFFERING_LETTER||''}"></div>
-              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload File Offering</label><input type="file" onchange="handleFile(this, 'OFFERING')" class="w-full p-1.5 border border-gray-300 rounded-lg bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx"></div>
-              <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Deadline Offering Letter</label><input type="date" id="fm_deadline_offering" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.DEADLINE_OFFERING_LETTER||''}"></div>
-              <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
+        bodyHtml = `
+          <div class="grid grid-cols-1 gap-5 mt-2">
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Tanggal Offering</label><input type="date" id="fm_jadwal" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.TANGGAL_OFFERING_LETTER||''}"></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload File Offering</label><input type="file" onchange="handleFile(this, 'OFFERING')" class="w-full p-1.5 border border-gray-300 rounded-lg bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx"></div>
+            <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Deadline Offering Letter</label><input type="date" id="fm_deadline_offering" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" value="${a.DEADLINE_OFFERING_LETTER||''}"></div>
+            <div class="space-y-1.5 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
               <label class="text-xs font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1"><span class="material-icons text-[14px]">info</span> Respon Kandidat (Trigger Warna)</label>
               <select id="fm_status" class="w-full p-2.5 border border-blue-300 rounded-lg font-bold text-blue-900 mt-1 outline-none">
                 <option value="">-- Pilih --</option>
@@ -447,10 +546,24 @@ onAuthStateChanged(auth, (user) => {
           payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
           payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
           payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          
+          if (payload[`METODE_INTERVIEW_${t}`] === 'Online') {
+            payload[`LINK_MEET_${t}`] = document.getElementById('fm_link_meet').value;
+            payload[`ID_LOKASI_${t}`] = '';
+            payload[`NAMA_LOKASI_${t}`] = '';
+            payload[`GMAPS_${t}`] = '';
+          } else if (payload[`METODE_INTERVIEW_${t}`] === 'Offline') {
+            payload[`LINK_MEET_${t}`] = '';
+            payload[`ID_LOKASI_${t}`] = document.getElementById('fm_lokasi').value;
+            payload[`NAMA_LOKASI_${t}`] = document.getElementById('fm_nama_lokasi').value;
+            payload[`GMAPS_${t}`] = document.getElementById('fm_gmaps').value;
+          }
+
           payload[`KESEDIAAN_INTERVIEW_${t}`] = document.getElementById('fm_sedia').value;
           payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
           payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
           payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
+          
           if (type === 'HR') {
             payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
             payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
@@ -480,6 +593,154 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById('loadingOverlay').style.display = 'none';
       }
     }
+
+    window.simpanTanpaTutup = async function(type) {
+      document.getElementById('loadingText').innerText = "Menyimpan Data Sementara...";
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+      
+      try {
+        const payload = {}; const t = type.toUpperCase();
+
+        if (['HR', 'User', 'Direktur'].includes(type)) {
+          payload[`JADWAL_INTERVIEW_${t}`] = document.getElementById('fm_jadwal').value;
+          payload[`JAM_INTERVIEW_${t}`] = document.getElementById('fm_jam').value;
+          payload[`METODE_INTERVIEW_${t}`] = document.getElementById('fm_metode').value;
+          
+          if (payload[`METODE_INTERVIEW_${t}`] === 'Online') {
+            payload[`LINK_MEET_${t}`] = document.getElementById('fm_link_meet').value;
+            payload[`ID_LOKASI_${t}`] = '';
+            payload[`NAMA_LOKASI_${t}`] = '';
+            payload[`GMAPS_${t}`] = '';
+          } else if (payload[`METODE_INTERVIEW_${t}`] === 'Offline') {
+            payload[`LINK_MEET_${t}`] = '';
+            payload[`ID_LOKASI_${t}`] = document.getElementById('fm_lokasi').value;
+            payload[`NAMA_LOKASI_${t}`] = document.getElementById('fm_nama_lokasi').value;
+            payload[`GMAPS_${t}`] = document.getElementById('fm_gmaps').value;
+          }
+        }
+
+        await window.updateDoc(window.doc(window.db, "applicants", selectedApplicantData.id), payload);
+        await window.initApp();
+        alert("Tanggal, Jam, dan Metode berhasil disimpan! Anda sekarang bisa klik tombol 'Hubungi WA Kandidat'.");
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        document.getElementById('loadingOverlay').style.display = 'none'; 
+      }
+    };
+
+    window.bukaModalTemplate = function(appId) {
+      const app = applicants.find(a => a.id === appId);
+      let optionsHTML = '<option value="">-- Pilih Template Pesan --</option>';
+      templatesWA.forEach((t, index) => {
+        optionsHTML += `<option value="${index}">${t.name.toUpperCase()}</option>`;
+      });
+
+      const html = `
+        <div class="fixed inset-0 bg-gray-900/60 z-[300] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-200">
+            <div class="px-5 py-4 border-b flex justify-between items-center bg-gray-50">
+              <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><span class="material-icons text-green-500">whatsapp</span> Kirim Pesan ke ${app.NAMA}</h2>
+              <button onclick="tutupModalTemplate()" class="text-gray-400 hover:text-red-500 transition-colors"><span class="material-icons">close</span></button>
+            </div>
+            <div class="p-5 space-y-4">
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Pilih Template Pesan</label>
+                <select id="sel_template" onchange="previewTemplate('${app.id}')" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-green-500 font-medium">
+                  ${optionsHTML}
+                </select>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Preview Pesan WA</label>
+                <textarea id="preview_wa" rows="12" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none text-sm bg-gray-50 text-gray-800 font-medium leading-relaxed" placeholder="Pilih template untuk melihat isi pesan..."></textarea>
+                <p class="text-[10px] text-gray-500 mt-1">*Anda masih bisa menambahkan atau mengedit teks di atas sebelum dikirim</p>
+              </div>
+            </div>
+            <div class="px-5 py-4 border-t flex justify-end gap-3 bg-gray-50">
+              <button onclick="tutupModalTemplate()" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">Batal</button>
+              <button onclick="kirimWA('${app.NOMOR_WA}')" class="px-4 py-2 text-sm font-semibold text-white bg-green-500 rounded-lg hover:bg-green-600 flex items-center gap-2 shadow-sm">
+                <span class="material-icons text-[16px]">send</span> Kirim ke WA
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('modalTemplateContainer').innerHTML = html;
+    };
+
+    window.previewTemplate = function(appId) {
+      const idx = document.getElementById('sel_template').value;
+      const ta = document.getElementById('preview_wa');
+      
+      if (idx === "") { 
+        ta.value = ""; 
+        return; 
+      }
+      
+      let text = templatesWA[idx].message || templatesWA[idx].text || '';
+      const app = applicants.find(a => a.id === appId);
+      
+      if (app) {
+        const formatTanggal = (tglAsli) => {
+          if (!tglAsli) return '-';
+          if (tglAsli.includes('-')) {
+            const parts = tglAsli.split('-');
+            const dateObj = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+            const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return `${dayNames[dateObj.getDay()]}, ${parseInt(parts[2])} ${monthNames[parseInt(parts[1]) - 1]} ${parts[0]}`;
+          }
+          return tglAsli;
+        };
+
+        text = text.replace(/\[NAMA\]/gi, app.NAMA || '-');
+        text = text.replace(/\[POSISI\]/gi, app.POSISI || '-');
+        text = text.replace(/\[ENTITAS\]/gi, app.ENTITAS || '-');
+        text = text.replace(/\[PLATFORM\]/gi, app.PLATFORM || '-');
+
+        text = text.replace(/\[JADWAL_INTERVIEW_HR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_HR));
+        text = text.replace(/\[JAM_INTERVIEW_HR\]/gi, app.JAM_INTERVIEW_HR || '-');
+        text = text.replace(/\[METODE_INTERVIEW_HR\]/gi, app.METODE_INTERVIEW_HR || '-');
+        text = text.replace(/\[LINK_MEET_HR\]/gi, app.LINK_MEET_HR || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_HR\]/gi, app.NAMA_LOKASI_HR || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_HR\]/gi, app.GMAPS_HR || '-');
+
+        text = text.replace(/\[JADWAL_INTERVIEW_USER\]/gi, formatTanggal(app.JADWAL_INTERVIEW_USER));
+        text = text.replace(/\[JAM_INTERVIEW_USER\]/gi, app.JAM_INTERVIEW_USER || '-');
+        text = text.replace(/\[METODE_INTERVIEW_USER\]/gi, app.METODE_INTERVIEW_USER || '-');
+        text = text.replace(/\[LINK_MEET_USER\]/gi, app.LINK_MEET_USER || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_USER\]/gi, app.NAMA_LOKASI_USER || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_USER\]/gi, app.GMAPS_USER || '-');
+
+        text = text.replace(/\[JADWAL_INTERVIEW_DIREKTUR\]/gi, formatTanggal(app.JADWAL_INTERVIEW_DIREKTUR));
+        text = text.replace(/\[JAM_INTERVIEW_DIREKTUR\]/gi, app.JAM_INTERVIEW_DIREKTUR || '-');
+        text = text.replace(/\[METODE_INTERVIEW_DIREKTUR\]/gi, app.METODE_INTERVIEW_DIREKTUR || '-');
+        text = text.replace(/\[LINK_MEET_DIREKTUR\]/gi, app.LINK_MEET_DIREKTUR || '-');
+        text = text.replace(/\[TEMPAT_INTERVIEW_DIREKTUR\]/gi, app.NAMA_LOKASI_DIREKTUR || '-');
+        text = text.replace(/\[GMAPS_INTERVIEW_DIREKTUR\]/gi, app.GMAPS_DIREKTUR || '-');
+
+        text = text.replace(/\[TANGGAL_OFFERING\]/gi, formatTanggal(app.TANGGAL_OFFERING_LETTER));
+        text = text.replace(/\[DEADLINE_OFFERING\]/gi, formatTanggal(app.DEADLINE_OFFERING_LETTER));
+        text = text.replace(/\[TANGGAL_ONBOARDING\]/gi, formatTanggal(app.TANGGAL_ONBOARDING));
+      }
+      
+      ta.value = text;
+    };
+
+    window.tutupModalTemplate = function() { document.getElementById('modalTemplateContainer').innerHTML = ''; };
+
+    window.kirimWA = function(noWa) {
+      const text = document.getElementById('preview_wa').value;
+      if(!text.trim()) return alert("Pilih template terlebih dahulu!");
+      
+      let formatWa = noWa.toString().replace(/[^0-9]/g, '');
+      if(formatWa.startsWith('0')) formatWa = '62' + formatWa.substring(1);
+      
+      const url = `https://api.whatsapp.com/send?phone=${formatWa}&text=${encodeURIComponent(text)}`;
+      
+      window.open(url, '_blank');
+      tutupModalTemplate();
+    };
   </script>
 </body>
 </html>
