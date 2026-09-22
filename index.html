@@ -491,19 +491,22 @@
           <td class="py-3 px-4 font-bold text-emerald-700 text-sm">${app.ENTITAS || ''}</td>
           
           <td class="py-3 px-4">
-            <div class="grid grid-cols-2 gap-2 w-full">
-              ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
-                const val = getTriggerVal(app, tahap);
-                const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
-                return `
-                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan}${getBtnClass(val)}">
-                    <span class="font-bold tracking-wide">${tahap}</span>
-                    <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
-                  </button>
-                `;
-              }).join('')}
-            </div>
-          </td>
+  <div class="grid grid-cols-2 gap-2 w-full">
+    ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
+      
+      // LOGIKA INI YANG MEMBUAT ONBOARDING MENJADI LEBAR
+      const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
+      
+      return `
+        <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan} ${getBtnClass(val)}">
+          <span class="font-bold tracking-wide">${tahap}</span>
+          <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
+        </button>
+      `;
+    }).join('')}
+  </div>
+</td>
+          
           <td class="py-3 px-4">
             <div class="flex justify-center gap-2">
                <button onclick="openModal('EditCandidate', '${app.id}')" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg shadow-sm transition-colors" title="Edit Data Kandidat">
