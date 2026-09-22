@@ -303,11 +303,10 @@
       return prefix + (maxNum + 1).toString().padStart(3, '0');
     }
 
-    // DIMODIFIKASI: Mendukung param folderId opsional
     async function uploadFileToDriveGAS(base64Data, fileName, folderId = null) {
       try {
         const bodyPayload = { file: base64Data, name: fileName };
-        if (folderId) bodyPayload.folderId = folderId; // Kirim ID target jika disediakan
+        if (folderId) bodyPayload.folderId = folderId; 
         
         const response = await fetch(GAS_UPLOAD_URL, {
           method: "POST",
@@ -491,22 +490,22 @@
           <td class="py-3 px-4 font-bold text-emerald-700 text-sm">${app.ENTITAS || ''}</td>
           
           <td class="py-3 px-4">
-  <div class="grid grid-cols-2 gap-2 w-full">
-    ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
-      
-      // LOGIKA INI YANG MEMBUAT ONBOARDING MENJADI LEBAR
-      const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
-      
-      return `
-        <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan} ${getBtnClass(val)}">
-          <span class="font-bold tracking-wide">${tahap}</span>
-          <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
-        </button>
-      `;
-    }).join('')}
-  </div>
-</td>
-          
+            <div class="grid grid-cols-2 gap-2 w-full">
+              ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
+                const val = getTriggerVal(app, tahap);
+                
+                // BARIS INI YANG MENGATUR TOMBOL ONBOARDING MENJADI LEBAR (col-span-2)
+                const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
+                
+                return `
+                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan}${getBtnClass(val)}">
+                    <span class="font-bold tracking-wide">${tahap}</span>
+                    <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </td>
           <td class="py-3 px-4">
             <div class="flex justify-center gap-2">
                <button onclick="openModal('EditCandidate', '${app.id}')" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg shadow-sm transition-colors" title="Edit Data Kandidat">
@@ -732,7 +731,6 @@
               ${type === 'HR' ? `
                 <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Psikotest HR</label><select id="fm_psikotest" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Dominan" ${a.PSIKOTEST_HR==='Dominan'?'selected':''}>Dominan</option><option value="Influence" ${a.PSIKOTEST_HR==='Influence'?'selected':''}>Influence</option><option value="Steadiness" ${a.PSIKOTEST_HR==='Steadiness'?'selected':''}>Steadiness</option><option value="Compliance" ${a.PSIKOTEST_HR==='Compliance'?'selected':''}>Compliance</option></select></div>
                 
-                <!-- DIMODIFIKASI: Kolom URL berubah menjadi fungsi Upload File -->
                 <div class="space-y-1.5 md:col-span-2">
                   <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload Form Pelamar (G-Drive)</label>
                   <input type="file" onchange="handleFile(this, 'FORM_PELAMAR')" class="w-full p-1.5 border border-gray-300 rounded-lg outline-none bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx,.jpg,.png" />
@@ -903,14 +901,13 @@
           payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
           payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
           
-          // DIMODIFIKASI: Logika untuk mengirim dan memproses file Form Pelamar
           if (type === 'HR') {
             payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
             
             if (tempFormData.FORM_PELAMAR_BASE64) {
               const ekstensi = tempFormData.FORM_PELAMAR_NAME.split('.').pop();
               const namaBaru = `Form Pelamar - ${selectedApplicantData.id} - ${selectedApplicantData.NAMA}.${ekstensi}`;
-              const formFolderId = "1mIgGHVAi72VJR2EsVjdOpVTPERs5LtJn"; // Folder khusus Form Pelamar
+              const formFolderId = "1mIgGHVAi72VJR2EsVjdOpVTPERs5LtJn";
               
               const driveUrl = await uploadFileToDriveGAS(tempFormData.FORM_PELAMAR_BASE64, namaBaru, formFolderId);
               if (driveUrl) payload.FORM_PELAMAR_HR = driveUrl;
