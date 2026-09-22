@@ -494,11 +494,11 @@
               ${['HR', 'User', 'Direktur', 'Offering', 'Onboarding'].map(tahap => {
                 const val = getTriggerVal(app, tahap);
                 
-                // BARIS INI YANG MENGATUR TOMBOL ONBOARDING MENJADI LEBAR (col-span-2)
-                const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
+                // PERBAIKAN: Menggunakan inline CSS murni agar pasti berfungsi
+                const gridStyle = tahap === 'Onboarding' ? 'style="grid-column: span 2;"' : '';
                 
                 return `
-                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan}${getBtnClass(val)}">
+                  <button onclick="openModal('${tahap}', '${app.id}')" ${gridStyle} class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${getBtnClass(val)}">
                     <span class="font-bold tracking-wide">${tahap}</span>
                     <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
                   </button>
@@ -506,6 +506,7 @@
               }).join('')}
             </div>
           </td>
+          
           <td class="py-3 px-4">
             <div class="flex justify-center gap-2">
                <button onclick="openModal('EditCandidate', '${app.id}')" class="p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg shadow-sm transition-colors" title="Edit Data Kandidat">
