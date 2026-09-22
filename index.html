@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8"> <!-- TAMBAHKAN BARIS INI UNTUK EMOTICON WHATSAPP -->
+  <meta charset="UTF-8">
   <base target="_top">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -81,7 +81,6 @@
   <!-- MAIN DASHBOARD -->
   <main class="flex-1 overflow-auto p-6 relative">
     <div class="max-w-[1500px] mx-auto bg-white rounded-xl shadow-md border border-gray-200 flex flex-col">
-      <!-- Toolbar Atas -->
       <div class="p-5 border-b border-gray-200 flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold text-gray-800">Dashboard Recruitment</h1>
@@ -97,7 +96,6 @@
         </div>
       </div>
 
-      <!-- Pencarian & Tombol Filter (DIREVISI) -->
       <div class="p-4 bg-gray-50 border-b border-gray-200 flex gap-4 items-center flex-wrap">
         <div class="relative w-72 lg:w-96 shadow-sm flex-shrink-0">
           <span class="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
@@ -108,7 +106,6 @@
           <span class="material-icons text-sm">filter_alt</span> Filter
         </button>
 
-        <!-- FITUR BARU: Dropdown Kelipatan -->
         <div class="flex items-center gap-2 ml-2 flex-shrink-0">
           <label class="text-sm font-medium text-gray-600 hidden sm:block">Tampilkan:</label>
           <select id="limitSelect" onchange="renderTable()" class="py-2.5 px-3 border border-gray-300 rounded-lg text-sm outline-none bg-white focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
@@ -120,7 +117,6 @@
           </select>
         </div>
 
-        <!-- FITUR BARU: Filter Tanggal Input -->
         <div class="ml-auto flex items-center gap-2">
           <label class="text-sm font-medium text-gray-600 hidden lg:flex items-center gap-1">
             <span class="material-icons text-[16px]">calendar_today</span> Tgl Input:
@@ -131,7 +127,6 @@
         </div>
       </div>
 
-      <!-- PANEL FILTER LENGKAP -->
       <div id="filterContainer" class="p-5 bg-white border-b border-gray-200 shadow-inner hidden">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div class="space-y-2">
@@ -153,7 +148,6 @@
         </div>
       </div>
 
-      <!-- Tabel -->
       <div class="overflow-x-auto flex-1 pb-16">
         <table class="w-full text-left border-collapse min-w-[1300px]">
           <thead>
@@ -263,18 +257,10 @@
       try {
         document.getElementById('loadingOverlay').style.display = 'flex'; 
         
-        // 1. Fetch Template WA & Urutkan
         try {
           const templatesSnapshot = await window.getDocs(window.collection(window.db, "templates"));
           templatesWA = [];
-          templatesSnapshot.forEach(doc => {
-            let tplData = doc.data();
-            // Beri nilai order tinggi jika template lama belum punya order
-            tplData.order = tplData.order !== undefined ? tplData.order : 999999;
-            templatesWA.push(tplData);
-          });
-          // Mengurutkan sesuai field order yang telah diset di Master Template
-          templatesWA.sort((a, b) => a.order - b.order);
+          templatesSnapshot.forEach(doc => templatesWA.push(doc.data()));
         } catch(e) {}
 
         try {
@@ -317,12 +303,16 @@
       return prefix + (maxNum + 1).toString().padStart(3, '0');
     }
 
-    async function uploadFileToDriveGAS(base64Data, fileName) {
+    // DIMODIFIKASI: Mendukung param folderId opsional
+    async function uploadFileToDriveGAS(base64Data, fileName, folderId = null) {
       try {
+        const bodyPayload = { file: base64Data, name: fileName };
+        if (folderId) bodyPayload.folderId = folderId; // Kirim ID target jika disediakan
+        
         const response = await fetch(GAS_UPLOAD_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ file: base64Data, name: fileName })
+          body: JSON.stringify(bodyPayload)
         });
         const result = await response.json();
         if (result.status === "success") return result.url;
@@ -410,10 +400,8 @@
       return false;
     }
 
-    // FUNGSI BARU: Untuk mengubah format string text WAKTU_INPUT menjadi objek JS Date untuk perbandingan
     function parseWaktuInput(dateStr) {
       if (!dateStr) return null;
-      // Memecah "16 September 2026 - 14.24" -> "16 September 2026"
       const dateOnlyStr = dateStr.split(' - ')[0]; 
       if (!dateOnlyStr) return null;
       
@@ -438,7 +426,6 @@
       const checkedPosisi = Array.from(document.querySelectorAll('.filter-posisi:checked')).map(cb => cb.value);
       const checkedEntitas = Array.from(document.querySelectorAll('.filter-entitas:checked')).map(cb => cb.value);
 
-      // Mengambil Nilai dari Filter Baru
       const limitVal = document.getElementById('limitSelect').value;
       const startVal = document.getElementById('startDate').value;
       const endVal = document.getElementById('endDate').value;
@@ -460,7 +447,6 @@
         const matchPosisi = checkedPosisi.length === 0 || checkedPosisi.includes(app.POSISI);
         const matchEntitas = checkedEntitas.length === 0 || checkedEntitas.includes(app.ENTITAS);
 
-        // Pengecekan Tanggal Input
         let matchDate = true;
         if (startDate || endDate) {
           const appDate = parseWaktuInput(app.WAKTU_INPUT);
@@ -468,7 +454,6 @@
             if (startDate && appDate < startDate) matchDate = false;
             if (endDate && appDate > endDate) matchDate = false;
           } else {
-            // Jika tanggal datanya kosong/error tapi filter sedang nyala, sembunyikan
             matchDate = false; 
           }
         }
@@ -476,10 +461,8 @@
         return matchSearch && matchTahapan && matchPlatform && matchPosisi && matchEntitas && matchDate;
       });
 
-      // Balik urutan agar data terbaru ada di atas
       filtered = filtered.slice().reverse();
 
-      // Logika pemotongan berdasarkan Dropdown Limit Data
       if (limitVal !== 'all') {
         const limitNum = parseInt(limitVal, 10);
         if (!isNaN(limitNum)) {
@@ -513,7 +496,7 @@
                 const val = getTriggerVal(app, tahap);
                 const colSpan = tahap === 'Onboarding' ? 'col-span-2' : '';
                 return `
-                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan} ${getBtnClass(val)}">
+                  <button onclick="openModal('${tahap}', '${app.id}')" class="p-1.5 rounded-md text-xs transition-colors flex flex-col items-center text-center justify-center border shadow-sm h-[45px] ${colSpan}${getBtnClass(val)}">
                     <span class="font-bold tracking-wide">${tahap}</span>
                     <span class="text-[9px] font-medium mt-0.5 opacity-90 truncate w-full px-1">${val || 'Belum'}</span>
                   </button>
@@ -745,7 +728,13 @@
               
               ${type === 'HR' ? `
                 <div class="space-y-1.5"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Psikotest HR</label><select id="fm_psikotest" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white outline-none"><option value="">-- Pilih --</option><option value="Dominan" ${a.PSIKOTEST_HR==='Dominan'?'selected':''}>Dominan</option><option value="Influence" ${a.PSIKOTEST_HR==='Influence'?'selected':''}>Influence</option><option value="Steadiness" ${a.PSIKOTEST_HR==='Steadiness'?'selected':''}>Steadiness</option><option value="Compliance" ${a.PSIKOTEST_HR==='Compliance'?'selected':''}>Compliance</option></select></div>
-                <div class="space-y-1.5 md:col-span-2"><label class="text-xs font-bold text-gray-600 uppercase tracking-wide">URL Form Pelamar (G-Drive)</label><input type="url" id="fm_url" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none" placeholder="http://..." value="${a.FORM_PELAMAR_HR||''}"></div>
+                
+                <!-- DIMODIFIKASI: Kolom URL berubah menjadi fungsi Upload File -->
+                <div class="space-y-1.5 md:col-span-2">
+                  <label class="text-xs font-bold text-gray-600 uppercase tracking-wide">Upload Form Pelamar (G-Drive)</label>
+                  <input type="file" onchange="handleFile(this, 'FORM_PELAMAR')" class="w-full p-1.5 border border-gray-300 rounded-lg outline-none bg-white text-sm cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:font-semibold hover:file:bg-blue-100" accept=".pdf,.doc,.docx,.jpg,.png" />
+                  ${a.FORM_PELAMAR_HR ? `<div class="mt-1 text-[11px]"><a href="${a.FORM_PELAMAR_HR}" target="_blank" class="text-blue-600 hover:underline font-bold">Lihat File Form Pelamar Saat Ini</a></div>` : ''}
+                </div>
               ` : ''}
 
               <div class="space-y-1.5 md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg mt-2 shadow-sm">
@@ -910,9 +899,19 @@
           payload[`KEHADIRAN_INTERVIEW_${t}`] = document.getElementById('fm_hadir').value;
           payload[`STATUS_INTERVIEW_${t}`] = document.getElementById('fm_status').value;
           payload[`KETERANGAN_INTERVIEW_${t}`] = document.getElementById('fm_ket').value;
+          
+          // DIMODIFIKASI: Logika untuk mengirim dan memproses file Form Pelamar
           if (type === 'HR') {
             payload.PSIKOTEST_HR = document.getElementById('fm_psikotest').value;
-            payload.FORM_PELAMAR_HR = document.getElementById('fm_url').value;
+            
+            if (tempFormData.FORM_PELAMAR_BASE64) {
+              const ekstensi = tempFormData.FORM_PELAMAR_NAME.split('.').pop();
+              const namaBaru = `Form Pelamar - ${selectedApplicantData.id} - ${selectedApplicantData.NAMA}.${ekstensi}`;
+              const formFolderId = "1mIgGHVAi72VJR2EsVjdOpVTPERs5LtJn"; // Folder khusus Form Pelamar
+              
+              const driveUrl = await uploadFileToDriveGAS(tempFormData.FORM_PELAMAR_BASE64, namaBaru, formFolderId);
+              if (driveUrl) payload.FORM_PELAMAR_HR = driveUrl;
+            }
           }
         } else if (type === 'Offering') {
           payload.TANGGAL_OFFERING_LETTER = document.getElementById('fm_jadwal').value;
@@ -1081,7 +1080,6 @@
       let formatWa = noWa.toString().replace(/[^0-9]/g, '');
       if(formatWa.startsWith('0')) formatWa = '62' + formatWa.substring(1);
       
-      // MENGGANTI wa.me MENJADI api.whatsapp.com/send AGAR EMOJI TIDAK RUSAK SAAT REDIRECT
       const url = `https://api.whatsapp.com/send?phone=${formatWa}&text=${encodeURIComponent(text)}`;
       
       window.open(url, '_blank');
