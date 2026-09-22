@@ -77,11 +77,27 @@
       </div>
 
       <!-- PANEL FILTER LENGKAP -->
-      <div id="filterContainer" class="p-5 bg-white border-b border-gray-200 shadow-inner hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div id="filterContainer" class="p-5 bg-white border-b border-gray-200 shadow-inner hidden max-h-[350px] overflow-y-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           <div class="space-y-2">
             <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Tahapan Event</h3>
             <div class="space-y-2 mt-2" id="filterTahapan"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Metode Interview</h3>
+            <div class="space-y-2 mt-2" id="filterMetode"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Kesediaan Hadir</h3>
+            <div class="space-y-2 mt-2" id="filterKesediaan"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Kehadiran Aktual</h3>
+            <div class="space-y-2 mt-2" id="filterKehadiran"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Status Interview</h3>
+            <div class="space-y-2 mt-2" id="filterStatus"></div>
           </div>
           <div class="space-y-2">
             <h3 class="font-semibold text-sm text-gray-700 border-b pb-1">Posisi Kandidat</h3>
@@ -229,21 +245,25 @@
 
     window.renderFilterOptions = function() {
       const tahapan = ['HR', 'User', 'Direktur', 'Offering', 'Onboarding'];
-      document.getElementById('filterTahapan').innerHTML = tahapan.map(t => `
-        <label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
-          <input type="checkbox" value="${t}" class="filter-tahapan w-4 h-4 rounded text-blue-600" onchange="renderCalendar()" /> ${t}
-        </label>
-      `).join('');
-
+      const metode = ['Online', 'Offline'];
+      const kesediaan = ['Bersedia', 'Tidak Bersedia', 'Tidak Merespon'];
+      const kehadiran = ['Hadir', 'Tidak Hadir'];
+      const status = ['Lolos', 'Tidak Lolos', 'Diterima', 'Ditolak'];
+      
       const posisis = [...new Set(applicants.map(a => a.POSISI).filter(Boolean))].sort();
       const entitas = [...new Set(applicants.map(a => a.ENTITAS).filter(Boolean))].sort();
 
       const createCheckboxes = (items, className) => items.map(item => `
-        <label class="flex items-center gap-2 text-sm cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
-          <input type="checkbox" value="${item}" class="${className} w-4 h-4 rounded" onchange="renderCalendar()" /> ${item}
+        <label class="flex items-center gap-2 text-[13px] cursor-pointer text-gray-600 hover:text-gray-900 bg-gray-50 p-1.5 rounded border border-gray-100">
+          <input type="checkbox" value="${item}" class="${className} w-3.5 h-3.5 rounded text-blue-600" onchange="renderCalendar()" /> ${item}
         </label>
       `).join('');
 
+      document.getElementById('filterTahapan').innerHTML = createCheckboxes(tahapan, 'filter-tahapan');
+      document.getElementById('filterMetode').innerHTML = createCheckboxes(metode, 'filter-metode');
+      document.getElementById('filterKesediaan').innerHTML = createCheckboxes(kesediaan, 'filter-sedia');
+      document.getElementById('filterKehadiran').innerHTML = createCheckboxes(kehadiran, 'filter-hadir');
+      document.getElementById('filterStatus').innerHTML = createCheckboxes(status, 'filter-status');
       document.getElementById('filterPosisi').innerHTML = createCheckboxes(posisis, 'filter-posisi');
       document.getElementById('filterEntitas').innerHTML = createCheckboxes(entitas, 'filter-entitas');
     }
@@ -263,8 +283,13 @@
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       
       const checkedTahapan = Array.from(document.querySelectorAll('.filter-tahapan:checked')).map(cb => cb.value);
+      const checkedMetode = Array.from(document.querySelectorAll('.filter-metode:checked')).map(cb => cb.value);
+      const checkedSedia = Array.from(document.querySelectorAll('.filter-sedia:checked')).map(cb => cb.value);
+      const checkedHadir = Array.from(document.querySelectorAll('.filter-hadir:checked')).map(cb => cb.value);
+      const checkedStatus = Array.from(document.querySelectorAll('.filter-status:checked')).map(cb => cb.value);
       const checkedPosisi = Array.from(document.querySelectorAll('.filter-posisi:checked')).map(cb => cb.value);
       const checkedEntitas = Array.from(document.querySelectorAll('.filter-entitas:checked')).map(cb => cb.value);
+      
       const searchTerm = document.getElementById('searchCalendar') ? document.getElementById('searchCalendar').value.toLowerCase() : '';
 
       const filteredApplicants = applicants.filter(app => {
@@ -292,28 +317,50 @@
         let eventsHtml = '';
         filteredApplicants.forEach(app => {
           const evts = [
-            { d: app.JADWAL_INTERVIEW_HR, t: app.JAM_INTERVIEW_HR, title: `HR: ${app.NAMA}${app.METODE_INTERVIEW_HR ? ` (${app.METODE_INTERVIEW_HR})` : ''}`, type: 'HR', c: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100' },
-            { d: app.JADWAL_INTERVIEW_USER, t: app.JAM_INTERVIEW_USER, title: `User: ${app.NAMA}${app.METODE_INTERVIEW_USER ? ` (${app.METODE_INTERVIEW_USER})` : ''}`, type: 'User', c: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' },
-            { d: app.JADWAL_INTERVIEW_DIREKTUR, t: app.JAM_INTERVIEW_DIREKTUR, title: `Dir: ${app.NAMA}${app.METODE_INTERVIEW_DIREKTUR ? ` (${app.METODE_INTERVIEW_DIREKTUR})` : ''}`, type: 'Direktur', c: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100' },
-            { d: app.TANGGAL_OFFERING_LETTER, t: '-', title: `Offering: ${app.NAMA}`, type: 'Offering', c: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
-            { d: app.DEADLINE_OFFERING_LETTER, t: '-', title: `Deadline OL: ${app.NAMA}`, type: 'Offering', c: 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100' },
-            { d: app.TANGGAL_ONBOARDING, t: '-', title: `Onboard: ${app.NAMA}`, type: 'Onboarding', c: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100' }
+            { 
+              d: app.JADWAL_INTERVIEW_HR, t: app.JAM_INTERVIEW_HR, title: `HR: ${app.NAMA}${app.METODE_INTERVIEW_HR ? ` (${app.METODE_INTERVIEW_HR})` : ''}`, type: 'HR', c: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100',
+              metode: app.METODE_INTERVIEW_HR || '', sedia: app.KESEDIAAN_INTERVIEW_HR || '', hadir: app.KEHADIRAN_INTERVIEW_HR || '', status: app.STATUS_INTERVIEW_HR || ''
+            },
+            { 
+              d: app.JADWAL_INTERVIEW_USER, t: app.JAM_INTERVIEW_USER, title: `User: ${app.NAMA}${app.METODE_INTERVIEW_USER ? ` (${app.METODE_INTERVIEW_USER})` : ''}`, type: 'User', c: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100',
+              metode: app.METODE_INTERVIEW_USER || '', sedia: app.KESEDIAAN_INTERVIEW_USER || '', hadir: app.KEHADIRAN_INTERVIEW_USER || '', status: app.STATUS_INTERVIEW_USER || ''
+            },
+            { 
+              d: app.JADWAL_INTERVIEW_DIREKTUR, t: app.JAM_INTERVIEW_DIREKTUR, title: `Dir: ${app.NAMA}${app.METODE_INTERVIEW_DIREKTUR ? ` (${app.METODE_INTERVIEW_DIREKTUR})` : ''}`, type: 'Direktur', c: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100',
+              metode: app.METODE_INTERVIEW_DIREKTUR || '', sedia: app.KESEDIAAN_INTERVIEW_DIREKTUR || '', hadir: app.KEHADIRAN_INTERVIEW_DIREKTUR || '', status: app.STATUS_INTERVIEW_DIREKTUR || ''
+            },
+            { 
+              d: app.TANGGAL_OFFERING_LETTER, t: '-', title: `Offering: ${app.NAMA}`, type: 'Offering', c: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100',
+              metode: '', sedia: app.KESEDIAAN_OFFERING_LETTER || '', hadir: '', status: app.KESEDIAAN_OFFERING_LETTER || ''
+            },
+            { 
+              d: app.DEADLINE_OFFERING_LETTER, t: '-', title: `Deadline OL: ${app.NAMA}`, type: 'Offering', c: 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100',
+              metode: '', sedia: app.KESEDIAAN_OFFERING_LETTER || '', hadir: '', status: app.KESEDIAAN_OFFERING_LETTER || ''
+            },
+            { 
+              d: app.TANGGAL_ONBOARDING, t: '-', title: `Onboard: ${app.NAMA}`, type: 'Onboarding', c: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100',
+              metode: '', sedia: '', hadir: app.KEHADIRAN_ONBOARDING || '', status: app.KEHADIRAN_ONBOARDING || ''
+            }
           ];
           
           evts.forEach(e => {
             const matchTahapan = checkedTahapan.length === 0 || checkedTahapan.includes(e.type);
+            const matchMetode = checkedMetode.length === 0 || checkedMetode.includes(e.metode);
+            const matchSedia = checkedSedia.length === 0 || checkedSedia.includes(e.sedia);
+            const matchHadir = checkedHadir.length === 0 || checkedHadir.includes(e.hadir);
+            const matchStatus = checkedStatus.length === 0 || checkedStatus.includes(e.status);
             
-            if (matchTahapan && e.d && (e.d === dateStr || e.d.includes(dateStr))) {
+            if (matchTahapan && matchMetode && matchSedia && matchHadir && matchStatus && e.d && (e.d === dateStr || e.d.includes(dateStr))) {
               const timeStr = e.t !== '-' && e.t ? e.t : 'Menunggu';
               const posStr = app.POSISI || '-';
               const entStr = app.ENTITAS || '-';
               
               eventsHtml += `
-                <div onclick="openModal('${e.type}', '${app.id}')" class="text-[10px] p-1.5 rounded-md border shadow-sm cursor-pointer flex flex-col gap-0.5 mb-1.5 transition-colors ${e.c}">
-                  <div class="font-bold truncate text-[11px]">${e.title}</div>
-                  <div class="flex items-start gap-1 opacity-90 font-medium">
-                    <span class="material-icons text-[11px] mt-[1px]">schedule</span> 
-                    <span class="leading-tight line-clamp-2">${timeStr} - ${posStr} - ${entStr}</span>
+                <div onclick="openModal('${e.type}', '${app.id}')" class="p-1.5 rounded-md border shadow-sm cursor-pointer flex flex-col gap-0.5 mb-1.5 transition-colors ${e.c}">
+                  <div class="font-bold text-[10px] leading-tight whitespace-normal break-words">${e.title}</div>
+                  <div class="flex items-start gap-1 opacity-90 font-medium mt-0.5">
+                    <span class="material-icons text-[10px] mt-[1px]">schedule</span> 
+                    <span class="text-[9px] leading-tight line-clamp-2">${timeStr} - ${posStr} - ${entStr}</span>
                   </div>
                 </div>
               `;
