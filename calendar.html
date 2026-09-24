@@ -112,11 +112,11 @@
       
       <!-- Legenda Warna -->
       <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex flex-wrap gap-6 text-xs font-semibold text-gray-600">
-        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-blue-400 shadow-sm"></span> HR</div>
-        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-purple-400 shadow-sm"></span> User</div>
-        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-orange-400 shadow-sm"></span> Direktur</div>
-        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm"></span> Offering</div>
-        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-sm"></span> Onboarding</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-blue-500 shadow-sm"></span> HR</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-purple-500 shadow-sm"></span> User</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-orange-500 shadow-sm"></span> Direktur</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-sm"></span> Offering</div>
+        <div class="flex items-center gap-2"><span class="w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-sm"></span> Onboarding</div>
       </div>
 
       <!-- Area Grid Kalender -->
@@ -315,6 +315,8 @@
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         
         let eventsHtml = '';
+        let counts = { HR: 0, User: 0, Direktur: 0, Offering: 0, Onboarding: 0 };
+
         filteredApplicants.forEach(app => {
           const evts = [
             { 
@@ -351,6 +353,12 @@
             const matchStatus = checkedStatus.length === 0 || checkedStatus.includes(e.status);
             
             if (matchTahapan && matchMetode && matchSedia && matchHadir && matchStatus && e.d && (e.d === dateStr || e.d.includes(dateStr))) {
+              if (e.title.startsWith("Deadline OL:")) {
+                 // Jangan hitung deadline offering sebagai event utama
+              } else {
+                 counts[e.type]++;
+              }
+
               const timeStr = e.t !== '-' && e.t ? e.t : 'Menunggu';
               const posStr = app.POSISI || '-';
               const entStr = app.ENTITAS || '-';
@@ -371,11 +379,20 @@
         const isToday = new Date().toDateString() === new Date(currentYear, currentMonth, i).toDateString();
         const cellClass = isToday ? 'bg-blue-50/30' : 'bg-white';
         const dateTextClass = isToday ? 'text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full inline-block' : 'text-gray-500';
+
+        // Tampilkan badge indikator jumlah interview
+        let countBadges = '';
+        if (counts.HR > 0) countBadges += `<span class="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mr-1" title="HR">${counts.HR}</span>`;
+        if (counts.User > 0) countBadges += `<span class="bg-purple-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mr-1" title="User">${counts.User}</span>`;
+        if (counts.Direktur > 0) countBadges += `<span class="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mr-1" title="Direktur">${counts.Direktur}</span>`;
+        if (counts.Offering > 0) countBadges += `<span class="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mr-1" title="Offering">${counts.Offering}</span>`;
+        if (counts.Onboarding > 0) countBadges += `<span class="bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm mr-1" title="Onboarding">${counts.Onboarding}</span>`;
         
         html += `
           <div class="min-h-[120px] p-2 hover:bg-gray-50 transition-colors border-b border-r border-gray-200 flex flex-col ${cellClass}">
-            <div class="text-xs font-bold text-right mb-2">
-              <span class="${dateTextClass}">${i}</span>
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center">${countBadges}</div>
+              <span class="text-xs font-bold ${dateTextClass}">${i}</span>
             </div>
             <div class="flex flex-col flex-1 overflow-y-auto max-h-[140px] hide-scrollbar">
               ${eventsHtml}
