@@ -486,7 +486,7 @@
             ${app.CV ? `
               <div class="flex flex-col gap-1.5">
                 <a href="${app.CV}" target="_blank" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1 text-xs bg-indigo-50 px-2 py-1 rounded inline-flex border border-indigo-200 whitespace-nowrap font-bold"><span class="material-icons text-[12px]">open_in_new</span> Lihat CV</a>
-                <button onclick="analisisCV('${app.CV}', '${app.NAMA.replace(/'/g, "\\'")}')" class="text-amber-600 hover:text-amber-900 flex items-center gap-1 text-xs bg-amber-50 px-2 py-1 rounded inline-flex border border-amber-200 whitespace-nowrap font-bold shadow-sm"><span class="material-icons text-[12px]">psychology</span> Analisis CV (AI)</button>
+                <button onclick="analisisCV('${app.CV}', '${app.NAMA.replace(/'/g, "\\'")}', '${app.POSISI}')" class="text-amber-600 hover:text-amber-900 flex items-center gap-1 text-xs bg-amber-50 px-2 py-1 rounded inline-flex border border-amber-200 whitespace-nowrap font-bold shadow-sm"><span class="material-icons text-[12px]">psychology</span> Analisis CV (AI)</button>
               </div>
             ` : `<span class="text-gray-400 text-xs italic">Belum ada</span>`}
           </td>
@@ -1093,29 +1093,34 @@
     };
 
     // FUNGSI BARU UNTUK ANALISIS CV
-    window.analisisCV = async function(cvUrl, namaKandidat) {
+   // Tambahkan parameter posisiKandidat
+    window.analisisCV = async function(cvUrl, namaKandidat, posisiKandidat) {
       document.getElementById('modalContainer').innerHTML = `
         <div class="fixed inset-0 bg-gray-900/60 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
           <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col p-8 items-center justify-center border border-gray-200">
             <span class="material-icons animate-spin text-amber-500 text-5xl mb-3">psychology</span>
             <h2 class="text-xl font-bold text-gray-800">Gemini sedang menganalisis CV...</h2>
-            <p class="text-sm text-gray-500 mt-2 text-center">Mohon tunggu sebentar, AI sedang membaca profil ${namaKandidat}.</p>
+            <p class="text-sm text-gray-500 mt-2 text-center">Mohon tunggu sebentar, AI sedang membaca profil ${namaKandidat} untuk posisi ${posisiKandidat}.</p>
           </div>
         </div>
       `;
 
       try {
+        // Sisipkan posisi ke dalam payload yang dikirim ke Kode.gs
         const payload = {
           action: "analyze_cv",
           fileUrl: cvUrl,
-          kandidat: namaKandidat
+          kandidat: namaKandidat,
+          posisi: posisiKandidat
         };
-
+        
+        // PASTIKAN URL INI ADALAH URL DEPLOYMENT BARU ANDA
         const response = await fetch(GAS_UPLOAD_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
+// ... (sisa kode fetch tetap sama)
         
         const result = await response.json();
         
