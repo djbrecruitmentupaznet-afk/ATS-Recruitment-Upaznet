@@ -1136,11 +1136,10 @@ Apakah Anda yakin ingin menghapus "${namaApp}" secara permanen dari database? Da
             <p class="text-sm text-gray-600 mb-4">Pilih model untuk menganalisis CV <b>${namaKandidat}</b>. Anda bisa mengeklik bagian lain dari dashboard ini selama AI memproses di latar belakang.</p>
             
             <select id="pilihanModelAI" class="w-full border border-gray-300 rounded-md p-2 mb-6 text-sm font-medium outline-none focus:ring-2 focus:ring-amber-500">
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Kuota Terbanyak / Sangat Aman)</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Cerdas / Kuota 20 per hari)</option>
-              <option value="gemini-3.8-flash">Gemini 3.8 Flash (Paling Cerdas / Limit Penuh)</option>
-              <option value="gemini-flash-latest">Gemini Flash Latest (Otomatis)</option>
-            </select>
+                <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Kuota 500 per hari)</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash (Limit 20 per hari)</option>
+                <option value="gemini-flash-latest">Gemini Flash Latest (Otomatis Model Terbaru)</option>
+              </select>
             
             <div class="flex justify-end gap-2">
               <button onclick="document.getElementById('modalContainer').innerHTML = ''" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-bold hover:bg-gray-200 border border-gray-300">Batal</button>
